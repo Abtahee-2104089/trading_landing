@@ -64,7 +64,7 @@ export default function About() {
           </ul>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button href="#contact" variant="navy" size="lg">
-              Start a Trade Inquiry
+              Request a Quote
             </Button>
             <Button href="#network" variant="outline-dark" size="lg">
               How we deliver

@@ -54,16 +54,16 @@ export default function TradingCategories() {
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold tracking-widest text-emerald-700 uppercase">
+          <p className="text-sm font-semibold tracking-widest text-teal-700 uppercase">
             What we trade
           </p>
           <h2
             id="categories-heading"
-            className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl"
+            className="mt-2 text-3xl font-bold tracking-tight text-navy-950 sm:text-4xl"
           >
-            Trading categories
+            What We Trade
           </h2>
-          <p className="mt-3 text-base text-neutral-600">
+          <p className="mt-3 text-base text-slate-600">
             Six core verticals with vetted suppliers, consolidated shipping, and
             quality inspection — so you can order mixed containers with confidence.
           </p>
@@ -73,9 +73,9 @@ export default function TradingCategories() {
           {categories.map((category) => (
             <article
               key={category.title}
-              className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 transition-shadow duration-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-emerald-600 focus-within:ring-offset-2"
+              className="group flex flex-col overflow-hidden rounded-2xl border border-navy-900/10 bg-cream-50 transition-shadow duration-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-teal-700 focus-within:ring-offset-2"
             >
-              <div className="relative h-48 w-full overflow-hidden bg-neutral-100">
+              <div className="relative h-48 w-full overflow-hidden bg-navy-50">
                 <Image
                   src={category.image}
                   alt={category.alt}
@@ -85,18 +85,18 @@ export default function TradingCategories() {
                 />
               </div>
               <div className="flex flex-1 flex-col p-6">
-              <h3 className="text-lg font-semibold text-neutral-900">
+              <h3 className="text-lg font-semibold text-navy-950">
                 {category.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 {category.description}
               </p>
-              <ul className="mt-4 space-y-1.5 text-sm text-neutral-700">
+              <ul className="mt-4 space-y-1.5 text-sm text-slate-700">
                 {category.items.map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <span
                       aria-hidden="true"
-                      className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600"
+                      className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-700"
                     />
                     {item}
                   </li>
@@ -104,7 +104,7 @@ export default function TradingCategories() {
               </ul>
               <a
                 href="#contact"
-                className="mt-5 inline-flex w-fit items-center gap-1 text-sm font-semibold text-emerald-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:outline-none rounded-sm"
+                className="mt-5 inline-flex w-fit items-center gap-1 text-sm font-semibold text-teal-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none rounded-sm"
               >
                 Enquire about this category
                 <span aria-hidden="true">→</span>
