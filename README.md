@@ -309,6 +309,14 @@ BASE_URL=http://localhost:3000 bun run verify:runtime
 
 Merge checklist (Kabir): one CTA label everywhere, one navy / one gold-teal, identical card radius/spacing, hero + 2 sections visually approved, no fake stats/certs, form validates empty/invalid email, Convex + SMTP works locally, mobile 360px readable, Lighthouse + keyboard pass.
 
+## Integration status (Kabir — do not push, local QA only)
+
+- Unified `app/page.tsx` composition done: Navbar → Hero → About → Categories → Network → Trust → Contact → Footer, anchors `home/about/categories/network/trust/contact`.
+- Kabir-owned additions: `lib/types/inquiry.ts` (frozen contract), `lib/utils/` (`cn`, `validation`), `lib/hooks/useSubmitInquiry.ts` (sole Convex entry-point), `lib/site.ts` (SEO/nav/contact source), `app/providers/convex-provider.tsx` (graceful when `NEXT_PUBLIC_CONVEX_URL` absent), `app/robots.ts`, `app/sitemap.ts`, `app/manifest.ts`, `app/opengraph-image.tsx`, `scripts/verify-runtime.mjs`, `vercel.json`, `docs/concept-deck.md`.
+- Unification fixes: Part B emerald/neutral tokens remapped to navy/gold/teal; headlines aligned to spec (`What We Trade`, `From Global Source to Final Market`, `Built on Reliability and Compliance`, `Let's Talk Trade`); Trust fake-stats grid removed per content rule; Contact form now calls real `inquiries.submit` + includes phone field; single CTA label `Request a Quote` everywhere.
+- QA (local, unpushed): `bun run check` (lint 0 errors + typecheck) ✓, `bun run format:check` (Kabir scope) ✓, `bun run build` ✓ (routes `/`, `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, `/opengraph-image`), `BASE_URL=http://localhost:3100 bun run verify:runtime` ✓.
+- Deploy wiring: Vercel `bun install --frozen-lockfile` + `bun run build` in `vercel.json`; set `NEXT_PUBLIC_CONVEX_URL` (+ `CONVEX_DEPLOYMENT`, `NEXT_PUBLIC_CONVEX_SITE_URL`) in Vercel env, `SITE_URL`/`INQUIRY_NOTIFY_TO`/SMTP vars via `bunx convex env set --prod`. Nothing pushed — test locally first.
+
 ## What to show tomorrow 3pm
 
 - Business objective + page flow (credibility → capabilities → reach → inquiry)
