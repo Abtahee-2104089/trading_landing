@@ -1,8 +1,42 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: var(--color-cream-50);
+  --foreground: var(--color-navy-950);
+}
+
+/* Design foundation — UAE Trade Gateway (Orny / Part A)
+   Palette: Deep Navy (slate-900 range), Warm White (stone-50 range),
+   Cool Gray (slate range), Muted Gold (amber-500 range) / Teal (teal-600 range). */
+@theme {
+  --color-navy-950: #081226;
+  --color-navy-900: #0f2140;
+  --color-navy-800: #1a3358;
+  --color-navy-700: #24466f;
+  --color-navy-100: #dbe4f0;
+  --color-navy-50: #eef3f9;
+
+  --color-cream-50: #fdfbf7;
+  --color-cream-100: #f7f3ea;
+
+  --color-gold-300: #e7c873;
+  --color-gold-400: #d9b545;
+  --color-gold-500: #c9a227;
+  --color-gold-600: #a9861d;
+
+  --color-background: var(--color-cream-50);
+  --color-foreground: var(--color-navy-950);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --animate-route-dash: route-dash 6s linear infinite;
+
+  @keyframes route-dash {
+    to {
+      stroke-dashoffset: -24;
+    }
+  }
 }
 
 @theme inline {
@@ -12,21 +46,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+::selection {
+  background: var(--color-gold-400);
+  color: var(--color-navy-950);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" role="img" aria-label="Stylised map showing the UAE connected to Asia, Africa, Europe and the GCC">
+  <defs>
+    <linearGradient id="mapbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0F2140"/>
+      <stop offset="1" stop-color="#081226"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="560" rx="24" fill="url(#mapbg)"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1">
+    <line x1="0" y1="112" x2="800" y2="112"/><line x1="0" y1="224" x2="800" y2="224"/>
+    <line x1="0" y1="336" x2="800" y2="336"/><line x1="0" y1="448" x2="800" y2="448"/>
+    <line x1="160" y1="0" x2="160" y2="560"/><line x1="320" y1="0" x2="320" y2="560"/>
+    <line x1="480" y1="0" x2="480" y2="560"/><line x1="640" y1="0" x2="640" y2="560"/>
+  </g>
+  <!-- simplified landmass blobs -->
+  <g fill="#1A3358">
+    <ellipse cx="180" cy="200" rx="120" ry="90"/>
+    <ellipse cx="620" cy="170" rx="130" ry="100"/>
+    <ellipse cx="250" cy="420" rx="110" ry="80"/>
+    <ellipse cx="600" cy="430" rx="120" ry="70"/>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-width="2.5" stroke-dasharray="7 7">
+    <path d="M430 300 C 340 240, 260 230, 200 220" stroke="#D9B545"/>
+    <path d="M430 300 C 520 220, 580 200, 640 190" stroke="#2DD4BF"/>
+    <path d="M430 300 C 380 370, 320 400, 270 415" stroke="#2DD4BF"/>
+    <path d="M430 300 C 510 360, 560 390, 600 410" stroke="#D9B545"/>
+    <path d="M430 300 C 470 300, 520 300, 570 300" stroke="#D9B545" opacity="0.6"/>
+  </g>
+  <g font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#FDFBF7">
+    <circle cx="200" cy="220" r="8" fill="#D9B545"/><text x="140" y="255">Asia sourcing</text>
+    <circle cx="640" cy="190" r="8" fill="#2DD4BF"/><text x="590" y="225">Europe</text>
+    <circle cx="270" cy="415" r="8" fill="#2DD4BF"/><text x="222" y="452">Africa</text>
+    <circle cx="600" cy="410" r="8" fill="#D9B545"/><text x="570" y="447">GCC</text>
+  </g>
+  <g>
+    <circle cx="430" cy="300" r="15" fill="#D9B545"/>
+    <circle cx="430" cy="300" r="25" fill="none" stroke="#D9B545" stroke-width="2" opacity="0.65"/>
+    <circle cx="430" cy="300" r="36" fill="none" stroke="#D9B545" stroke-width="1.5" opacity="0.35"/>
+    <text x="430" y="352" text-anchor="middle" font-family="Arial, sans-serif" font-size="21" font-weight="bold" fill="#FDFBF7">UAE · Dubai</text>
+    <text x="430" y="376" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#CBD5E1">Consolidation · QC · Re-export</text>
+  </g>
+</svg>

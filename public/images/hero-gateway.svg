@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 640" role="img" aria-label="Cargo port at dusk with trade routes radiating from the UAE hub">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0F2140"/>
+      <stop offset="0.62" stop-color="#1A3358"/>
+      <stop offset="1" stop-color="#24466F"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#164E63"/>
+      <stop offset="1" stop-color="#0B2A3A"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.62" cy="0.42" r="0.55">
+      <stop offset="0" stop-color="#D9B545" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#D9B545" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="640" rx="24" fill="url(#sky)"/>
+  <rect width="800" height="640" rx="24" fill="url(#glow)"/>
+  <g fill="#FFFFFF" opacity="0.7">
+    <circle cx="120" cy="90" r="1.6"/><circle cx="240" cy="60" r="1.3"/><circle cx="360" cy="100" r="1.6"/>
+    <circle cx="500" cy="70" r="1.3"/><circle cx="640" cy="110" r="1.6"/><circle cx="720" cy="70" r="1.3"/>
+    <circle cx="180" cy="150" r="1.2"/><circle cx="430" cy="140" r="1.2"/><circle cx="590" cy="160" r="1.2"/>
+  </g>
+  <!-- moon -->
+  <circle cx="660" cy="120" r="34" fill="#E7C873" opacity="0.9"/>
+  <circle cx="648" cy="112" r="30" fill="#0F2140" opacity="0.25"/>
+  <!-- route arcs: UAE hub to regions -->
+  <g fill="none" stroke-linecap="round" stroke-width="2.5" stroke-dasharray="7 7">
+    <path d="M500 250 C 400 180, 280 170, 170 210" stroke="#D9B545" opacity="0.9"/>
+    <path d="M500 250 C 560 170, 640 150, 720 170" stroke="#2DD4BF" opacity="0.9"/>
+    <path d="M500 250 C 470 330, 380 380, 260 390" stroke="#2DD4BF" opacity="0.7"/>
+    <path d="M500 250 C 580 320, 640 350, 730 360" stroke="#D9B545" opacity="0.7"/>
+  </g>
+  <g font-family="Arial, sans-serif" font-size="16" font-weight="bold">
+    <circle cx="170" cy="210" r="7" fill="#D9B545"/><text x="150" y="240" fill="#FDFBF7">Asia</text>
+    <circle cx="720" cy="170" r="7" fill="#2DD4BF"/><text x="688" y="200" fill="#FDFBF7">Europe</text>
+    <circle cx="260" cy="390" r="7" fill="#2DD4BF"/><text x="232" y="420" fill="#FDFBF7">Africa</text>
+    <circle cx="730" cy="360" r="7" fill="#D9B545"/><text x="700" y="390" fill="#FDFBF7">GCC</text>
+  </g>
+  <!-- UAE hub -->
+  <g>
+    <circle cx="500" cy="250" r="16" fill="#D9B545"/>
+    <circle cx="500" cy="250" r="26" fill="none" stroke="#D9B545" stroke-width="2" opacity="0.6"/>
+    <circle cx="500" cy="250" r="38" fill="none" stroke="#D9B545" stroke-width="1.5" opacity="0.35"/>
+    <text x="500" y="312" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#FDFBF7">UAE · Jebel Ali</text>
+  </g>
+  <!-- sea -->
+  <rect x="0" y="440" width="800" height="200" fill="url(#sea)"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="2">
+    <line x1="60" y1="480" x2="180" y2="480"/><line x1="300" y1="510" x2="460" y2="510"/>
+    <line x1="560" y1="485" x2="740" y2="485"/><line x1="120" y1="550" x2="300" y2="550"/>
+    <line x1="480" y1="560" x2="680" y2="560"/>
+  </g>
+  <!-- vessel -->
+  <g>
+    <rect x="250" y="430" width="300" height="46" rx="6" fill="#081226"/>
+    <rect x="250" y="430" width="300" height="10" rx="5" fill="#C9A227"/>
+    <g>
+      <rect x="270" y="398" width="52" height="32" rx="3" fill="#B45309"/>
+      <rect x="326" y="398" width="52" height="32" rx="3" fill="#0D9488"/>
+      <rect x="382" y="398" width="52" height="32" rx="3" fill="#92400E"/>
+      <rect x="438" y="398" width="52" height="32" rx="3" fill="#115E59"/>
+    </g>
+    <rect x="500" y="368" width="44" height="62" rx="4" fill="#FDFBF7"/>
+    <g fill="#0F2140"><rect x="506" y="376" width="12" height="10"/><rect x="522" y="376" width="12" height="10"/><rect x="506" y="390" width="12" height="10"/><rect x="522" y="390" width="12" height="10"/></g>
+  </g>
+  <!-- cranes -->
+  <g stroke="#E7C873" stroke-width="6" stroke-linecap="round" opacity="0.9">
+    <line x1="110" y1="440" x2="110" y2="300"/><line x1="110" y1="300" x2="200" y2="300"/>
+    <line x1="690" y1="440" x2="690" y2="310"/><line x1="690" y1="310" x2="600" y2="310"/>
+  </g>
+  <g fill="#E7C873" opacity="0.9"><rect x="150" y="310" width="26" height="18" rx="2"/><rect x="624" y="320" width="26" height="18" rx="2"/></g>
+  <g fill="#FDFBF7" opacity="0.92">
+    <rect x="40" y="420" width="60" height="20" rx="3"/><rect x="104" y="420" width="60" height="20" rx="3"/>
+    <rect x="636" y="420" width="60" height="20" rx="3"/><rect x="700" y="420" width="60" height="20" rx="3"/>
+  </g>
+</svg>
