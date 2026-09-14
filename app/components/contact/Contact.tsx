@@ -14,7 +14,8 @@ export default function Contact() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
     const payload = {
       name: String(data.get("name") ?? "").trim(),
       email: String(data.get("email") ?? "").trim(),
@@ -30,7 +31,7 @@ export default function Contact() {
 
     const ok = await submit(payload);
     if (ok) {
-      event.currentTarget.reset();
+      form.reset();
     }
   }
 
