@@ -317,17 +317,6 @@ Merge checklist (Kabir): one CTA label everywhere, one navy / one gold-teal, ide
 - QA (local, unpushed): `bun run check` (lint 0 errors + typecheck) ✓, `bun run format:check` (Kabir scope) ✓, `bun run build` ✓ (routes `/`, `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, `/opengraph-image`), `BASE_URL=http://localhost:3100 bun run verify:runtime` ✓.
 - Deploy wiring: Vercel `bun install` + `bun run build` in `vercel.json` (plain install, NOT `--frozen-lockfile`: Vercel's Bun 1.3.x cannot parse the v2 lockfile written by local Bun 1.4.x, so a frozen install fails with `Unknown lockfile version`); set `NEXT_PUBLIC_CONVEX_URL` (+ `CONVEX_DEPLOYMENT`, `NEXT_PUBLIC_CONVEX_SITE_URL`) in Vercel env, `SITE_URL`/`INQUIRY_NOTIFY_TO`/SMTP vars via `bunx convex env set --prod`. Nothing pushed — test locally first.
 
-## What to show tomorrow 3pm
-
-- Business objective + page flow (credibility → capabilities → reach → inquiry)
-- `UAE Trade Gateway` creative direction, palette, typography
-- Hero concept (headline + CTAs + route visual)
-- Full 8-section flow + initial wireframe or high-fidelity mockup of hero + 2 key sections
-- Example category cards + network/logistics visualization concept
-- Trust/compliance treatment + contact/lead-capture flow
-- Stack + implementation approach + 4-person split above
-- One-line summary: *A modern B2B trade gateway that uses the UAE's strategic position as the visual and narrative anchor, guiding visitors from credibility → capabilities → global reach → inquiry.*
-
 ## Deployment
 
 1. Deploy backend schema and functions:
