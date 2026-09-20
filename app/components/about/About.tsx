@@ -30,15 +30,18 @@ export default function About() {
       aria-labelledby="about-heading"
       className="scroll-mt-20 bg-cream-50 py-16 sm:py-20"
     >
-      <Container className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-        <div>
-          <SectionHeading
-            eyebrow="Who we are"
-            headingId="about-heading"
-            title="Your Strategic Trade Partner in the UAE"
-            description="We are a Dubai-based general trading team helping retailers, wholesalers, and project buyers source quality goods, consolidate shipments at Jebel Ali, and clear customs without delays."
-          />
-          <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <Container>
+        <SectionHeading
+          eyebrow="Who we are"
+          headingId="about-heading"
+          title="Your Strategic Trade Partner in the UAE"
+          description="We are a Dubai-based general trading team helping retailers, wholesalers, and project buyers source quality goods, consolidate shipments at Jebel Ali, and clear customs without delays."
+          align="center"
+          className="mx-auto text-center"
+        />
+        <div className="mt-12 grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+          <div>
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {advantages.map((item) => (
               <li
                 key={item.title}
@@ -61,7 +64,7 @@ export default function About() {
           </ul>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button href="#contact" variant="navy" size="lg">
-              Start a Trade Inquiry
+              Request a Quote
             </Button>
             <Button href="#network" variant="outline-dark" size="lg">
               How we deliver
@@ -85,7 +88,8 @@ export default function About() {
             <span className="font-semibold">Why it matters: </span>
             cargo already flows through the UAE — we put your goods on those
             lanes with vetted suppliers and paperwork done right.
-          </p>
+            </p>
+          </div>
         </div>
       </Container>
     </section>
