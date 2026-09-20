@@ -53,7 +53,8 @@ export function useSubmitInquiry() {
           category: input.category.trim() || "General enquiry",
           message: input.message.trim(),
         });
-        setInquiryId(result.id);
+        // `id` is absent on honeypot (bot) submissions — success without a row.
+        setInquiryId(result.id ?? null);
         setStatus("success");
         return true;
       } catch (err) {
