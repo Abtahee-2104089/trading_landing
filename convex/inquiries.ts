@@ -7,6 +7,16 @@ import {
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { emailStatus, inquiryStatus, outboxKind, outboxStatus } from "./schema";
+import { inquirySchema } from "./inquiryShared";
+import {
+  SUBMIT_HOUR_LIMIT,
+  SUBMIT_HOUR_MS,
+  SUBMIT_MINUTE_LIMIT,
+  SUBMIT_MINUTE_MS,
+  checkRateLimit,
+  incrementRateLimit,
+  submitRateKeys,
+} from "./rateLimit";
 
 // ---------------------------------------------------------------------------
 // Shared validators
@@ -15,7 +25,7 @@ import { emailStatus, inquiryStatus, outboxKind, outboxStatus } from "./schema";
 export const inquiryStatusValidator = inquiryStatus;
 export const emailStatusValidator = emailStatus;
 
-const inquiryDocValidator = v.object({
+export const inquiryDocValidator = v.object({
   _id: v.id("inquiries"),
   _creationTime: v.number(),
   name: v.string(),
@@ -26,6 +36,8 @@ const inquiryDocValidator = v.object({
   message: v.string(),
   status: inquiryStatusValidator,
   emailStatus: emailStatusValidator,
+  teamNotified: v.optional(v.boolean()),
+  senderAcked: v.optional(v.boolean()),
   createdAt: v.number(),
   updatedAt: v.optional(v.number()),
 });
@@ -46,67 +58,107 @@ const outboxDocValidator = v.object({
 });
 
 // Frozen frontend contract:
-// inquiries.submit({ name, company, email, phone, category, message }) -> { id }
+// inquiries.submit({ name, company?, email, phone?, category, message, website? })
+//   -> { id? }
+// `id` is present for real submissions. Honeypot (bot) submissions get a
+// silent success WITHOUT an insert, so no `id` is returned — the frontend
+// must treat "no error" as success and never branch on `id` being set.
 export const submitArgs = {
   name: v.string(),
   company: v.optional(v.string()),
   email: v.string(),
   phone: v.optional(v.string()),
-  category: v.optional(v.string()),
+  category: v.string(),
   message: v.string(),
+  website: v.optional(v.string()),
 };
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function fail(message: string): never {
   throw new ConvexError({ code: "VALIDATION_ERROR", message });
 }
 
-function clean(value: string, max: number): string {
-  return value.trim().replace(/\s+/g, " ").slice(0, max);
+/** Collapse inner whitespace (names/companies must be single-line). */
+function singleLine(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 // ---------------------------------------------------------------------------
 // Public: submit a new trade inquiry
 //
-// - Validates + normalizes input (convex validators + server-side checks).
-// - Stores status "new" / emailStatus "pending".
-// - Schedules async SMTP delivery; mail failures never fail the submit —
-//   they are recorded on the inquiry (emailStatus) + mailOutbox log.
-// - Never reads or returns secrets.
+// Hardened (P0-1 + P1-1):
+// - Honeypot (`website`): non-empty → silent fake success, no insert/mail.
+// - Throttle: max 5/min and 20/hour per normalized email (RATE_LIMITED).
+// - Strict validation via the shared zod `inquirySchema` (category enum,
+//   lengths, formats). Over-length input throws VALIDATION_ERROR — never
+//   silently truncated.
+// - All user-facing errors are static safe strings (no paths, no input).
 // ---------------------------------------------------------------------------
 
 export const submit = mutation({
   args: submitArgs,
-  returns: v.object({ id: v.id("inquiries") }),
+  returns: v.object({ id: v.optional(v.id("inquiries")) }),
   handler: async (ctx, args) => {
-    const name = clean(args.name ?? "", 100);
-    const email = (args.email ?? "").trim().slice(0, 254).toLowerCase();
-    const company = clean(args.company ?? "", 120);
-    const phoneRaw = (args.phone ?? "").trim().slice(0, 40);
-    const category = clean(args.category ?? "General enquiry", 120) || "General enquiry";
-    // Keep newlines in the message but cap length.
-    const message = (args.message ?? "").trim().slice(0, 5000);
-
-    if (name.length < 2) fail("Please provide your full name.");
-    if (!EMAIL_RE.test(email)) fail("Please provide a valid email address.");
-    if (message.length < 10) fail("Please describe your requirement (min 10 characters).");
-    if (phoneRaw && !/^[+()\-.\s\d]{6,40}$/.test(phoneRaw)) {
-      fail("Please provide a valid phone number.");
+    // 1. Honeypot first (before throttle): bots always see success and get
+    //    no signal they were detected. No insert, no mail, no quota burn.
+    if (args.website !== undefined && args.website.trim() !== "") {
+      return {};
     }
+
+    // 2. Throttle on normalized email before doing any writes.
+    const emailKey = (args.email ?? "").trim().toLowerCase();
+    const { minuteKey, hourKey } = submitRateKeys(emailKey);
+    await checkRateLimit(ctx, {
+      key: minuteKey,
+      limit: SUBMIT_MINUTE_LIMIT,
+      windowMs: SUBMIT_MINUTE_MS,
+    });
+    await checkRateLimit(ctx, {
+      key: hourKey,
+      limit: SUBMIT_HOUR_LIMIT,
+      windowMs: SUBMIT_HOUR_MS,
+    });
+
+    // 3. Single source of truth: zod parses + enforces everything.
+    const parsed = inquirySchema.safeParse({
+      name: args.name ?? "",
+      company: args.company ?? "",
+      email: args.email ?? "",
+      phone: args.phone ?? "",
+      category: args.category ?? "",
+      message: args.message ?? "",
+      website: args.website ?? "",
+    });
+    if (!parsed.success) {
+      // First issue message only — static safe strings from the schema
+      // (field names like "email" are fine; never internal paths/input).
+      fail(parsed.error.issues[0]?.message ?? "Invalid submission.");
+    }
+    const input = parsed.data;
+
+    const name = singleLine(input.name);
+    const company = singleLine(input.company);
+    const email = input.email; // already trimmed + lowercased by zod
+    const phone = input.phone.trim();
+    const message = input.message.trim(); // keep newlines, cap enforced by zod
 
     const now = Date.now();
     const id = await ctx.db.insert("inquiries", {
       name,
       company,
       email,
-      ...(phoneRaw ? { phone: phoneRaw } : {}),
-      category,
+      ...(phone ? { phone } : {}),
+      category: input.category,
       message,
       status: "new",
       emailStatus: "pending",
+      teamNotified: false,
+      senderAcked: false,
       createdAt: now,
     });
+
+    // Successful writes burn quota (failed/blocked attempts do not).
+    await incrementRateLimit(ctx, { key: minuteKey, windowMs: SUBMIT_MINUTE_MS });
+    await incrementRateLimit(ctx, { key: hourKey, windowMs: SUBMIT_HOUR_MS });
 
     // Fire-and-forget email delivery (team notify + sender ack).
     await ctx.scheduler.runAfter(0, internal.emails.sendInquiryEmails, {
@@ -178,11 +230,15 @@ export const recordEmailStatus = internalMutation({
   args: {
     id: v.id("inquiries"),
     emailStatus: emailStatusValidator,
+    teamNotified: v.optional(v.boolean()),
+    senderAcked: v.optional(v.boolean()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch("inquiries", args.id, {
       emailStatus: args.emailStatus,
+      ...(args.teamNotified !== undefined ? { teamNotified: args.teamNotified } : {}),
+      ...(args.senderAcked !== undefined ? { senderAcked: args.senderAcked } : {}),
       updatedAt: Date.now(),
     });
     return null;

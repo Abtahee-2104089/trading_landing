@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run"
     "format:check": "prettier --check app/layout.tsx app/page.tsx app/robots.ts app/sitemap.ts app/manifest.ts app/opengraph-image.tsx app/providers lib scripts/verify-runtime.mjs vercel.json package.json",
     "check": "bun run lint && bun run typecheck",
     "verify:runtime": "node scripts/verify-runtime.mjs"
@@ -17,19 +18,23 @@
     "next": "16.3.5",
     "nodemailer": "^10.0.9",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "convex-test": "^0.0.59",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "prettier": "^3.6.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.1"
   },
   "packageManager": "bun@1.4.2",
   "ignoreScripts": [

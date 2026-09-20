@@ -8,8 +8,16 @@
  * @module
  */
 
+import type * as adminAuth from "../adminAuth.js";
+import type * as cms from "../cms.js";
 import type * as emails from "../emails.js";
 import type * as inquiries from "../inquiries.js";
+import type * as inquiriesAdmin from "../inquiriesAdmin.js";
+import type * as inquiryShared from "../inquiryShared.js";
+import type * as media from "../media.js";
+import type * as rateLimit from "../rateLimit.js";
+import type * as seed from "../seed.js";
+import type * as seedData from "../seedData.js";
 
 import type {
   ApiFromModules,
@@ -18,8 +26,16 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  adminAuth: typeof adminAuth;
+  cms: typeof cms;
   emails: typeof emails;
   inquiries: typeof inquiries;
+  inquiriesAdmin: typeof inquiriesAdmin;
+  inquiryShared: typeof inquiryShared;
+  media: typeof media;
+  rateLimit: typeof rateLimit;
+  seed: typeof seed;
+  seedData: typeof seedData;
 }>;
 
 /**
