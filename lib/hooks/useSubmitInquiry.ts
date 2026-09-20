@@ -5,17 +5,42 @@ import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
 import { api } from "@/convex/_generated/api";
 import { isConvexConfigured } from "@/app/providers/convex-provider";
-import type { InquiryInput } from "@/lib/types/inquiry";
-import { validateInquiry } from "@/lib/utils/validation";
+import {
+  inquirySchema,
+  type InquiryInput,
+} from "@/lib/schemas/inquiry";
 
 export type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
+const GENERIC_ERROR = "Something went wrong. Please try again.";
+const RATE_LIMIT_ERROR = "Too many requests. Please try again in a minute.";
+
+/** Map backend/transport errors to user-safe messages (never raw paths). */
+function toUserMessage(err: unknown): string {
+  if (err instanceof ConvexError) {
+    const data = err.data as { code?: unknown; message?: unknown } | undefined;
+    if (data?.code === "RATE_LIMITED") return RATE_LIMIT_ERROR;
+    if (typeof data?.message === "string" && data.message.length > 0) {
+      // Server fail() messages are user-safe by contract; still cap length.
+      return data.message.slice(0, 300);
+    }
+    return GENERIC_ERROR;
+  }
+  if (err instanceof Error) {
+    // Network errors etc. — never surface raw message (may leak internals).
+    if (/network|fetch|failed|offline/i.test(err.message)) return GENERIC_ERROR;
+    return GENERIC_ERROR;
+  }
+  return GENERIC_ERROR;
+}
+
 /**
- * Single backend entry-point for the inquiry form (Kabir-owned, frozen API).
+ * Single backend entry-point for the inquiry form.
  *
- * Wraps Shawon's `inquiries.submit({name, company, email, phone, category,
- * message}) -> {id}`. Presentational components must call ONLY this hook —
- * never import Convex functions directly.
+ * Wraps `inquiries.submit({name, company, email, phone, category,
+ * message, website?}) -> {id}`. Presentational components must call ONLY
+ * this hook — never import Convex functions directly.
+ * Client validation mirrors the server via `inquirySchema` (single source).
  */
 export function useSubmitInquiry() {
   const submitMutation = useMutation(api.inquiries.submit);
@@ -29,10 +54,10 @@ export function useSubmitInquiry() {
       setError(null);
       setInquiryId(null);
 
-      const clientErrors = validateInquiry(input);
-      if (clientErrors.length > 0) {
+      const parsed = inquirySchema.safeParse(input);
+      if (!parsed.success) {
         setStatus("error");
-        setError(clientErrors[0].message);
+        setError(parsed.error.issues[0]?.message ?? GENERIC_ERROR);
         return false;
       }
 
@@ -46,30 +71,20 @@ export function useSubmitInquiry() {
 
       try {
         const result = await submitMutation({
-          name: input.name.trim(),
-          company: input.company.trim(),
-          email: input.email.trim(),
-          phone: input.phone.trim(),
-          category: input.category.trim() || "General enquiry",
-          message: input.message.trim(),
+          name: parsed.data.name,
+          company: parsed.data.company ?? "",
+          email: parsed.data.email,
+          phone: parsed.data.phone ?? "",
+          category: parsed.data.category,
+          message: parsed.data.message,
+          ...(parsed.data.website ? { website: parsed.data.website } : {}),
         });
         setInquiryId(result.id);
         setStatus("success");
         return true;
       } catch (err) {
-        const message =
-          err instanceof ConvexError &&
-          typeof err.data === "object" &&
-          err.data !== null
-            ? String(
-                (err.data as { message?: unknown }).message ??
-                  "Submission failed.",
-              )
-            : err instanceof Error
-              ? err.message
-              : "Something went wrong. Please try again.";
         setStatus("error");
-        setError(message.slice(0, 300));
+        setError(toUserMessage(err));
         return false;
       }
     },

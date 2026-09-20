@@ -1,3 +1,4 @@
 export { default } from "./Contact";
-export { useContactSubmit } from "./use-contact-submit";
-export type { ContactPayload, ContactStatus } from "./use-contact-submit";
+export { useSubmitInquiry as useContactSubmit } from "@/lib/hooks/useSubmitInquiry";
+export type { SubmitStatus as ContactStatus } from "@/lib/hooks/useSubmitInquiry";
+export type { InquiryInput as ContactPayload } from "@/lib/schemas/inquiry";

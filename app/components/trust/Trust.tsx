@@ -1,7 +1,10 @@
+"use client";
+
 import Container from "@/app/components/ui/Container";
 import SectionHeading from "@/app/components/ui/SectionHeading";
+import { useSections } from "@/lib/hooks/useSiteContent";
 
-const pillars = [
+const fallbackPillars = [
   {
     title: "Verified suppliers only",
     text: "Every factory and wholesaler passes trade-license, export-history, and sample checks before listing.",
@@ -20,18 +23,22 @@ const pillars = [
   },
 ];
 
-const assurances = [
-  "No invented certifications, clients, or volumes — placeholder copy until verified",
+// Verifiable assurances only — the old "placeholder copy until verified"
+// disclaimer line must never ship to users (P1-3).
+const fallbackAssurances = [
   "Inspection evidence shared before payment release",
   "Verified credentials and references shared on request",
 ];
 
 /**
- * Trust & Compliance — credible placeholder copy only.
+ * Trust & Compliance — CMS-driven (`sections[key=trust]`).
  * Content rule: never invent certifications, clients, volumes, awards,
  * statistics, or partnerships. Numbers appear here only after verification.
  */
 export default function Trust() {
+  const { byKey } = useSections();
+  const section = byKey("trust");
+
   return (
     <section
       id="trust"
@@ -40,14 +47,17 @@ export default function Trust() {
     >
       <Container>
         <SectionHeading
-          eyebrow="Trust & compliance"
+          eyebrow={section?.eyebrow ?? "Trust & compliance"}
           headingId="trust-heading"
-          title="Built on Reliability and Compliance"
-          description="Importing is risky when you can't see the goods. We close that gap with inspection evidence, clear paperwork, and dependable supply relationships — and we make no claims we can't prove."
+          title={section?.headline ?? "Built on Reliability and Compliance"}
+          description={
+            section?.body ??
+            "Importing is risky when you can't see the goods. We close that gap with inspection evidence, clear paperwork, and dependable supply relationships — and we make no claims we can't prove."
+          }
         />
 
         <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2">
-          {pillars.map((pillar) => (
+          {fallbackPillars.map((pillar) => (
             <article
               key={pillar.title}
               className="rounded-2xl border border-navy-900/10 bg-white p-6 shadow-sm transition-shadow duration-200 hover:shadow-md focus-within:ring-2 focus-within:ring-teal-700 focus-within:ring-offset-2"
@@ -69,7 +79,7 @@ export default function Trust() {
         </div>
 
         <ul className="mt-6 rounded-2xl border border-gold-500/30 bg-gold-300/15 p-6 text-sm leading-relaxed text-navy-900">
-          {assurances.map((item) => (
+          {fallbackAssurances.map((item) => (
             <li key={item} className="flex items-start gap-2 py-1">
               <span aria-hidden="true" className="font-bold text-gold-600">·</span>
               {item}

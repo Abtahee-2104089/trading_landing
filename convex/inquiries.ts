@@ -46,7 +46,9 @@ const outboxDocValidator = v.object({
 });
 
 // Frozen frontend contract:
-// inquiries.submit({ name, company, email, phone, category, message }) -> { id }
+// inquiries.submit({ name, company, email, phone, category, message, website? }) -> { id }
+// `website` is the honeypot (P0-1): when filled, we silently succeed
+// without inserting or mailing so bots learn nothing.
 export const submitArgs = {
   name: v.string(),
   company: v.optional(v.string()),
@@ -54,7 +56,18 @@ export const submitArgs = {
   phone: v.optional(v.string()),
   category: v.optional(v.string()),
   message: v.string(),
+  website: v.optional(v.string()),
 };
+
+const INQUIRY_CATEGORIES = [
+  "General enquiry",
+  "Electronics & Electrical",
+  "Foodstuff & Agro Commodities",
+  "Textiles & Garments",
+  "Building Materials & Hardware",
+  "Cosmetics & Personal Care",
+  "Auto Parts & Industrial",
+] as const;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -80,6 +93,24 @@ export const submit = mutation({
   args: submitArgs,
   returns: v.object({ id: v.id("inquiries") }),
   handler: async (ctx, args) => {
+    // Honeypot (P0-1): bots fill `website`. Succeed silently without mail —
+    // store a closed/skipped marker (never scheduled for delivery) so the
+    // `{ id }` return shape stays valid and triage (`status == "new"`) is
+    // unaffected. TODO(rate-limit): Shawon adds throttle on top.
+    if (args.website !== undefined && args.website.trim() !== "") {
+      const id = await ctx.db.insert("inquiries", {
+        name: "honeypot",
+        company: "",
+        email: "honeypot@invalid.local",
+        category: "General enquiry",
+        message: "honeypot",
+        status: "closed",
+        emailStatus: "skipped",
+        createdAt: Date.now(),
+      });
+      return { id };
+    }
+
     const name = clean(args.name ?? "", 100);
     const email = (args.email ?? "").trim().slice(0, 254).toLowerCase();
     const company = clean(args.company ?? "", 120);
@@ -93,6 +124,10 @@ export const submit = mutation({
     if (message.length < 10) fail("Please describe your requirement (min 10 characters).");
     if (phoneRaw && !/^[+()\-.\s\d]{6,40}$/.test(phoneRaw)) {
       fail("Please provide a valid phone number.");
+    }
+    // P1-1: enforce the category enum server-side (was "any string").
+    if (!(INQUIRY_CATEGORIES as readonly string[]).includes(category)) {
+      fail("Please choose a valid category.");
     }
 
     const now = Date.now();
