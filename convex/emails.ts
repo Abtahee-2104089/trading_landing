@@ -95,6 +95,8 @@ export const sendInquiryEmails = internalAction({
       await ctx.runMutation(internal.inquiries.recordEmailStatus, {
         id: args.inquiryId,
         emailStatus: "failed",
+        teamNotified: false,
+        senderAcked: false,
       });
       console.warn(`[emails] transport not configured; inquiry ${inquiry._id} saved with emailStatus=failed`);
       return { notified: false, acknowledged: false, emailStatus: "failed" as const };
@@ -175,6 +177,10 @@ export const sendInquiryEmails = internalAction({
     await ctx.runMutation(internal.inquiries.recordEmailStatus, {
       id: args.inquiryId,
       emailStatus,
+      // P2 nit: per-mail flags so a partial success (team notified but ack
+      // failed, or vice versa) is triageable instead of a flat "failed".
+      teamNotified: notified,
+      senderAcked: acknowledged,
     });
 
     return { notified, acknowledged, emailStatus };
