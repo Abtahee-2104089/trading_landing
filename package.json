@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
     "format:check": "prettier --check app/layout.tsx app/page.tsx app/robots.ts app/sitemap.ts app/manifest.ts app/opengraph-image.tsx app/providers lib scripts/verify-runtime.mjs vercel.json package.json",
     "check": "bun run lint && bun run typecheck",
     "verify:runtime": "node scripts/verify-runtime.mjs"
