@@ -1,6 +1,6 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "navy" | "outline-light" | "outline-dark" | "ghost-light";
+type Variant = "primary" | "navy" | "outline-light" | "outline-dark";
 type Size = "sm" | "md" | "lg";
 
 type CommonProps = {
@@ -17,21 +17,20 @@ type ButtonAsLink = CommonProps &
 export type ButtonProps = ButtonAsButton | ButtonAsLink;
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60";
 
 const variants: Record<Variant, string> = {
-  // Muted gold CTA — the one primary CTA repeated everywhere.
+  // Muted gold CTA — the one primary CTA repeated everywhere (dark chrome).
   primary:
-    "bg-gold-500 text-navy-950 hover:bg-gold-400 focus-visible:ring-gold-500 focus-visible:ring-offset-navy-950",
+    "bg-gold-500 text-navy-950 hover:bg-gold-400 focus-visible:ring-gold-400 focus-visible:ring-offset-navy-950",
   // Deep navy for light backgrounds (secondary emphasis).
-  navy: "bg-navy-900 text-white hover:bg-navy-800",
-  // Outline on dark backgrounds (hero secondary CTA).
+  navy: "bg-navy-900 text-white hover:bg-navy-800 focus-visible:ring-teal-700 focus-visible:ring-offset-white",
+  // Outline on dark backgrounds (hero secondary CTA) — gold ring for contrast on navy.
   "outline-light":
-    "border border-white/30 bg-white/5 text-white hover:bg-white/10",
+    "border border-white/30 bg-white/5 text-white hover:bg-white/10 focus-visible:ring-gold-400 focus-visible:ring-offset-navy-950",
   // Outline on light backgrounds.
   "outline-dark":
-    "border border-navy-900/20 bg-white text-navy-900 hover:bg-navy-50",
-  "ghost-light": "text-white/80 hover:text-white hover:bg-white/10",
+    "border border-navy-900/20 bg-white text-navy-900 hover:bg-navy-50 focus-visible:ring-teal-700 focus-visible:ring-offset-white",
 };
 
 const sizes: Record<Size, string> = {
