@@ -15,16 +15,19 @@ export default function About() {
       aria-labelledby="about-heading"
       className="scroll-mt-20 bg-cream-50 py-16 sm:py-20"
     >
-      <Container className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-        <div>
-          <SectionHeading
-            eyebrow={about.eyebrow}
-            headingId="about-heading"
-            title={about.headline}
-            description={about.body}
-          />
-          <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {about.advantages.map((item) => (
+      <Container>
+        <SectionHeading
+          eyebrow="Who we are"
+          headingId="about-heading"
+          title="Your Strategic Trade Partner in the UAE"
+          description="We are a Dubai-based general trading team helping retailers, wholesalers, and project buyers source quality goods, consolidate shipments at Jebel Ali, and clear customs without delays."
+          align="center"
+          className="mx-auto text-center"
+        />
+        <div className="mt-12 grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+          <div>
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {advantages.map((item) => (
               <li
                 key={item.title}
                 className="rounded-2xl border border-navy-900/10 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md"
@@ -45,8 +48,8 @@ export default function About() {
             ))}
           </ul>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button href={about.ctaPrimaryHref} variant="navy" size="lg">
-              {about.ctaPrimaryLabel}
+            <Button href="#contact" variant="navy" size="lg">
+              Request a Quote
             </Button>
             <Button href={about.ctaSecondaryHref} variant="outline-dark" size="lg">
               {about.ctaSecondaryLabel}
@@ -67,9 +70,11 @@ export default function About() {
             />
           </div>
           <p className="mt-4 rounded-xl border border-gold-500/30 bg-gold-300/15 px-4 py-3 text-sm leading-relaxed text-navy-900">
-            <span className="font-semibold">{about.noteTitle} </span>
-            {about.noteBody}
-          </p>
+            <span className="font-semibold">Why it matters: </span>
+            cargo already flows through the UAE — we put your goods on those
+            lanes with vetted suppliers and paperwork done right.
+            </p>
+          </div>
         </div>
       </Container>
     </section>

@@ -2,24 +2,31 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useContactSubmit } from "./use-contact-submit";
+import Container from "@/app/components/ui/Container";
+import SectionHeading from "@/app/components/ui/SectionHeading";
+import { useSubmitInquiry } from "@/lib/hooks/useSubmitInquiry";
+import { INQUIRY_CATEGORIES, type InquiryInput } from "@/lib/types/inquiry";
+import { site } from "@/lib/site";
 
 const inputClasses =
-  "w-full rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-60";
+  "w-full rounded-lg border border-navy-900/15 bg-white px-4 py-2.5 text-sm text-navy-950 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-60";
 
+/** Final CTA + inquiry form — low-friction, one primary CTA, clear response expectation. */
 export default function Contact() {
-  const { status, error, submit, reset } = useContactSubmit();
+  const { status, error, submit, reset } = useSubmitInquiry();
   const [formError, setFormError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
-    const data = new FormData(event.currentTarget);
-    const payload = {
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const payload: InquiryInput = {
       name: String(data.get("name") ?? "").trim(),
-      email: String(data.get("email") ?? "").trim(),
       company: String(data.get("company") ?? "").trim(),
-      category: String(data.get("category") ?? "").trim(),
+      email: String(data.get("email") ?? "").trim(),
+      phone: String(data.get("phone") ?? "").trim(),
+      category: String(data.get("category") ?? "General enquiry").trim(),
       message: String(data.get("message") ?? "").trim(),
     };
 
@@ -30,7 +37,7 @@ export default function Contact() {
 
     const ok = await submit(payload);
     if (ok) {
-      event.currentTarget.reset();
+      form.reset();
     }
   }
 
@@ -42,63 +49,56 @@ export default function Contact() {
       aria-labelledby="contact-heading"
       className="scroll-mt-20 bg-white py-16 sm:py-20"
     >
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+      <Container className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div>
-          <p className="text-sm font-semibold tracking-widest text-emerald-700 uppercase">
-            Contact
-          </p>
-          <h2
-            id="contact-heading"
-            className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl"
-          >
-            Get a quote in 24 hours
-          </h2>
-          <p className="mt-3 text-base text-neutral-600">
-            Tell us what you want to import or export. We reply with price,
-            lead time, and shipping options — no obligation.
-          </p>
-          <ul className="mt-6 space-y-3 text-sm text-neutral-700">
+          <SectionHeading
+            eyebrow="Final CTA"
+            headingId="contact-heading"
+            title="Let's Talk Trade"
+            description="Tell us what you want to import or export. Our trading desk replies within one business day with price, lead time, and shipping options — no obligation."
+          />
+          <ul className="mt-6 space-y-3 text-sm text-slate-700">
             <li>
-              <span className="font-semibold">Email:</span>{" "}
+              <span className="font-semibold text-navy-950">Email:</span>{" "}
               <a
-                href="mailto:trade@example.ae"
-                className="text-emerald-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:outline-none rounded-sm"
+                href={`mailto:${site.contact.email}`}
+                className="rounded-sm text-teal-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
-                trade@example.ae
+                {site.contact.email}
               </a>
             </li>
             <li>
-              <span className="font-semibold">Phone / WhatsApp:</span>{" "}
+              <span className="font-semibold text-navy-950">Phone / WhatsApp:</span>{" "}
               <a
-                href="tel:+971400000000"
-                className="text-emerald-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:outline-none rounded-sm"
+                href={site.contact.phoneHref}
+                className="rounded-sm text-teal-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
-                +971 4 000 0000
+                {site.contact.phoneDisplay}
               </a>
             </li>
             <li>
-              <span className="font-semibold">Office:</span> Jebel Ali, Dubai,
-              UAE
+              <span className="font-semibold text-navy-950">Office:</span>{" "}
+              {site.contact.office}
             </li>
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-6 sm:p-8">
+        <div className="rounded-2xl border border-navy-900/10 bg-cream-50 p-6 sm:p-8">
           {status === "success" ? (
             <div
               role="status"
               className="flex h-full flex-col items-start justify-center gap-3"
             >
-              <h3 className="text-xl font-semibold text-neutral-900">
+              <h3 className="text-xl font-semibold text-navy-950">
                 Message received
               </h3>
-              <p className="text-sm text-neutral-600">
+              <p className="text-sm text-slate-600">
                 Thanks — our trading desk will reply within one business day.
               </p>
               <button
                 type="button"
                 onClick={reset}
-                className="mt-2 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-white focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="mt-2 rounded-lg border border-navy-900/15 bg-white px-4 py-2 text-sm font-semibold text-navy-900 hover:bg-navy-50 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 Send another enquiry
               </button>
@@ -106,14 +106,14 @@ export default function Contact() {
           ) : (
             <form onSubmit={handleSubmit} noValidate={false} aria-describedby="contact-desc">
               <p id="contact-desc" className="sr-only">
-                Enquiry form. All fields marked required must be filled.
+                Enquiry form. Name, email, and message are required.
               </p>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label
                     htmlFor="contact-name"
-                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    className="mb-1.5 block text-sm font-semibold text-navy-950"
                   >
                     Full name <span aria-hidden="true">*</span>
                   </label>
@@ -123,6 +123,7 @@ export default function Contact() {
                     type="text"
                     autoComplete="name"
                     required
+                    minLength={2}
                     placeholder="Ahmed Khan"
                     disabled={isSubmitting}
                     className={inputClasses}
@@ -131,7 +132,7 @@ export default function Contact() {
                 <div>
                   <label
                     htmlFor="contact-email"
-                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    className="mb-1.5 block text-sm font-semibold text-navy-950"
                   >
                     Email <span aria-hidden="true">*</span>
                   </label>
@@ -152,12 +153,10 @@ export default function Contact() {
                 <div>
                   <label
                     htmlFor="contact-company"
-                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    className="mb-1.5 block text-sm font-semibold text-navy-950"
                   >
                     Company{" "}
-                    <span className="font-normal text-neutral-500">
-                      (optional)
-                    </span>
+                    <span className="font-normal text-slate-500">(optional)</span>
                   </label>
                   <input
                     id="contact-company"
@@ -171,33 +170,50 @@ export default function Contact() {
                 </div>
                 <div>
                   <label
-                    htmlFor="contact-category"
-                    className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                    htmlFor="contact-phone"
+                    className="mb-1.5 block text-sm font-semibold text-navy-950"
                   >
-                    Category
+                    Phone{" "}
+                    <span className="font-normal text-slate-500">(optional)</span>
                   </label>
-                  <select
-                    id="contact-category"
-                    name="category"
+                  <input
+                    id="contact-phone"
+                    name="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="+971 4 000 0000"
                     disabled={isSubmitting}
-                    defaultValue="General enquiry"
                     className={inputClasses}
-                  >
-                    <option>General enquiry</option>
-                    <option>Electronics & Electrical</option>
-                    <option>Foodstuff & Agro Commodities</option>
-                    <option>Textiles & Garments</option>
-                    <option>Building Materials & Hardware</option>
-                    <option>Cosmetics & Personal Care</option>
-                    <option>Auto Parts & Industrial</option>
-                  </select>
+                  />
                 </div>
               </div>
 
               <div className="mt-4">
                 <label
+                  htmlFor="contact-category"
+                  className="mb-1.5 block text-sm font-semibold text-navy-950"
+                >
+                  Requirement / category
+                </label>
+                <select
+                  id="contact-category"
+                  name="category"
+                  disabled={isSubmitting}
+                  defaultValue={INQUIRY_CATEGORIES[0]}
+                  className={inputClasses}
+                >
+                  {INQUIRY_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mt-4">
+                <label
                   htmlFor="contact-message"
-                  className="mb-1.5 block text-sm font-semibold text-neutral-800"
+                  className="mb-1.5 block text-sm font-semibold text-navy-950"
                 >
                   Message <span aria-hidden="true">*</span>
                 </label>
@@ -205,6 +221,7 @@ export default function Contact() {
                   id="contact-message"
                   name="message"
                   required
+                  minLength={10}
                   rows={5}
                   placeholder="Product, quantity, destination city…"
                   disabled={isSubmitting}
@@ -221,14 +238,17 @@ export default function Contact() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="mt-5 w-full rounded-lg bg-emerald-700 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto sm:px-8"
+                className="mt-5 w-full rounded-lg bg-gold-500 px-4 py-3 text-sm font-semibold text-navy-950 transition-colors hover:bg-gold-400 disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-gold-500 focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto sm:px-8"
               >
-                {isSubmitting ? "Sending…" : "Send enquiry"}
+                {isSubmitting ? "Sending…" : site.primaryCta}
               </button>
+              <p className="mt-3 text-xs text-slate-500">
+                We reply within one business day with price, lead time, and shipping options.
+              </p>
             </form>
           )}
         </div>
-      </div>
+      </Container>
     </section>
   );
 }
