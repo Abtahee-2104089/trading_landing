@@ -2,6 +2,9 @@ import Container from "@/app/components/ui/Container";
 import { site } from "@/lib/site";
 
 export default function Footer() {
+  const { content } = useSiteContent();
+  const { footer, nav, contact, primaryCta, primaryCtaHref } = content;
+
   return (
     <footer className="bg-navy-950 text-slate-300">
       <Container className="py-12">

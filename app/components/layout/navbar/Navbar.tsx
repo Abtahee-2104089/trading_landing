@@ -1,19 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Container from "@/app/components/ui/Container";
 import Button from "@/app/components/ui/Button";
-
-const navLinks = [
-  { href: "#about", label: "About" },
-  { href: "#categories", label: "Categories" },
-  { href: "#network", label: "Network" },
-  { href: "#trust", label: "Trust" },
-  { href: "#contact", label: "Contact" },
-];
+import { useSiteContent } from "@/lib/hooks/useSiteContent";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const { content } = useSiteContent();
+  const navLinks = content.nav;
+  const brandName = content.siteName;
+  const brandTagline = content.tagline;
+  const ctaLabel = content.primaryCta;
+  const ctaHref = content.primaryCtaHref;
+
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   return (
     <header
@@ -24,7 +32,7 @@ export default function Navbar() {
         <a
           href="#home"
           className="flex items-center gap-2.5 rounded-sm focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 focus-visible:outline-none"
-          aria-label="UAE Trade Gateway — home"
+          aria-label={`${brandName} — home`}
         >
           <span
             aria-hidden="true"
@@ -34,10 +42,10 @@ export default function Navbar() {
           </span>
           <span className="leading-tight">
             <span className="block text-base font-bold tracking-tight">
-              UAE Trade Gateway
+              {brandName}
             </span>
             <span className="block text-[11px] font-medium tracking-widest text-slate-300 uppercase">
-              Import · Export · Dubai
+              {brandTagline}
             </span>
           </span>
         </a>
@@ -59,8 +67,8 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden lg:block">
-          <Button href="#contact" variant="primary" size="sm">
-            Request a Quote
+          <Button href={ctaHref} variant="primary" size="sm">
+            {ctaLabel}
           </Button>
         </div>
 
@@ -115,13 +123,13 @@ export default function Navbar() {
             </ul>
           </nav>
           <Button
-            href="#contact"
+            href={ctaHref}
             variant="primary"
             size="lg"
             className="mt-3 w-full"
             onClick={() => setOpen(false)}
           >
-            Request a Quote
+            {ctaLabel}
           </Button>
         </div>
       ) : null}

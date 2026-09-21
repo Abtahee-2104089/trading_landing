@@ -1,15 +1,13 @@
 import Image from "next/image";
 import Container from "@/app/components/ui/Container";
 import Button from "@/app/components/ui/Button";
-
-const assurances = [
-  { title: "Jebel Ali consolidation", text: "Mixed containers, one shipment" },
-  { title: "Customs cleared", text: "Documents handled end to end" },
-  { title: "One partner", text: "Sourcing to last-mile delivery" },
-];
+import { useSiteContent } from "@/lib/hooks/useSiteContent";
 
 /** Hero — value prop above the fold with dual CTAs + port/route visual. */
 export default function Hero() {
+  const { content } = useSiteContent();
+  const hero = content.hero;
+
   return (
     <section
       id="home"
@@ -21,6 +19,8 @@ export default function Hero() {
         <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-teal-600/20 blur-3xl" />
         <div className="absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-gold-500/15 blur-3xl" />
         <svg
+          aria-hidden="true"
+          focusable="false"
           className="absolute inset-x-0 top-0 h-full w-full opacity-20"
           viewBox="0 0 800 400"
           fill="none"
@@ -48,30 +48,27 @@ export default function Hero() {
         <div>
           <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold tracking-widest text-gold-300 uppercase">
             <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-gold-400" />
-            UAE-based import &amp; export
+            {hero.badge}
           </p>
           <h1
             id="home-heading"
             className="mt-4 text-4xl leading-[1.05] font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl"
           >
-            Global Trade. Seamless Supply.{" "}
-            <span className="text-gold-400">Trusted from the UAE.</span>
+            {hero.headline} <span className="text-gold-400">{hero.headlineAccent}</span>
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
-            Your UAE-based partner connecting international suppliers and
-            buyers through sourcing, commodity trading, and cross-border
-            logistics — consolidated at Jebel Ali, delivered across the region.
+            {hero.sub}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button href="#contact" variant="primary" size="lg">
-              Request a Quote
+            <Button href={hero.ctaPrimaryHref} variant="primary" size="lg">
+              {hero.ctaPrimaryLabel}
             </Button>
-            <Button href="#categories" variant="outline-light" size="lg">
-              Explore Trading Categories
+            <Button href={hero.ctaSecondaryHref} variant="outline-light" size="lg">
+              {hero.ctaSecondaryLabel}
             </Button>
           </div>
           <dl className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {assurances.map((item) => (
+            {hero.assurances.map((item) => (
               <div
                 key={item.title}
                 className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
@@ -88,8 +85,8 @@ export default function Hero() {
         <div className="relative">
           <div className="overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/40">
             <Image
-              src="/images/hero-gateway.svg"
-              alt="Cargo vessel and port cranes at dusk with trade routes radiating from the UAE hub at Jebel Ali"
+              src={hero.imageSrc}
+              alt={hero.imageAlt}
               width={800}
               height={640}
               priority

@@ -2,28 +2,13 @@ import Image from "next/image";
 import Container from "@/app/components/ui/Container";
 import SectionHeading from "@/app/components/ui/SectionHeading";
 import Button from "@/app/components/ui/Button";
-
-const advantages = [
-  {
-    title: "Gateway location",
-    text: "Dubai sits between Asian supply and Middle East, Africa, and European demand — fewer legs, faster turns.",
-  },
-  {
-    title: "Jebel Ali consolidation",
-    text: "Combine mixed categories into full containers at one of the region's most connected ports.",
-  },
-  {
-    title: "Clearance without delays",
-    text: "Invoices, packing lists, certificates of origin, and municipality requirements handled for you.",
-  },
-  {
-    title: "Re-export ready",
-    text: "One partner for sourcing, QC, freight, and GCC-wide distribution — DDP/DAP where it helps.",
-  },
-];
+import { useSiteContent } from "@/lib/hooks/useSiteContent";
 
 /** About + UAE Advantage — who we are and why the UAE location matters. */
 export default function About() {
+  const { content } = useSiteContent();
+  const about = content.about;
+
   return (
     <section
       id="about"
@@ -66,8 +51,8 @@ export default function About() {
             <Button href="#contact" variant="navy" size="lg">
               Request a Quote
             </Button>
-            <Button href="#network" variant="outline-dark" size="lg">
-              How we deliver
+            <Button href={about.ctaSecondaryHref} variant="outline-dark" size="lg">
+              {about.ctaSecondaryLabel}
             </Button>
           </div>
         </div>
@@ -75,8 +60,8 @@ export default function About() {
         <div>
           <div className="overflow-hidden rounded-2xl border border-navy-900/10 shadow-xl shadow-navy-950/10">
             <Image
-              src="/images/about-uae-hub.svg"
-              alt="Stylised map showing the UAE connected to Asia sourcing, Europe, Africa, and GCC markets"
+              src={about.imageSrc}
+              alt={about.imageAlt}
               width={800}
               height={560}
               loading="lazy"

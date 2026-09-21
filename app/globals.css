@@ -65,4 +65,7 @@ html {
   html {
     scroll-behavior: auto;
   }
+  .animate-route-dash {
+    animation: none;
+  }
 }
