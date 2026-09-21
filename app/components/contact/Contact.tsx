@@ -1,47 +1,98 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Container from "@/app/components/ui/Container";
 import SectionHeading from "@/app/components/ui/SectionHeading";
 import { useSubmitInquiry } from "@/lib/hooks/useSubmitInquiry";
-import { INQUIRY_CATEGORIES, type InquiryInput } from "@/lib/types/inquiry";
-import { site } from "@/lib/site";
+import {
+  INQUIRY_CATEGORIES,
+  matchCategorySlug,
+  type InquiryCategory,
+} from "@/lib/schemas/inquiry";
+import { useCmsContact, useCmsSection, useCmsSiteMeta } from "@/lib/hooks/useCmsContent";
 
 const inputClasses =
-  "w-full rounded-lg border border-navy-900/15 bg-white px-4 py-2.5 text-sm text-navy-950 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-60";
+  "w-full rounded-lg border border-navy-900/15 bg-white px-4 py-2.5 text-sm text-navy-950 placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-60";
 
-/** Final CTA + inquiry form — low-friction, one primary CTA, clear response expectation. */
+/** Read `#contact?category=<slug>` (or `?category=`) from the URL. */
+function categoryFromUrl(): InquiryCategory | null {
+  if (typeof window === "undefined") return null;
+  const hashCategory = window.location.hash.includes("category=")
+    ? window.location.hash.split("category=")[1]?.split("&")[0]
+    : null;
+  const searchCategory = new URLSearchParams(window.location.search).get("category");
+  const raw = hashCategory ?? searchCategory;
+  if (!raw) return null;
+  try {
+    return matchCategorySlug(decodeURIComponent(raw));
+  } catch {
+    return null;
+  }
+}
+
+/** Final CTA + inquiry form — CMS-driven, low-friction, measurable. */
 export default function Contact() {
   const { status, error, submit, reset } = useSubmitInquiry();
-  const [formError, setFormError] = useState<string | null>(null);
+  const { contact } = useCmsContact();
+  const { section } = useCmsSection("contact");
+  const { primaryCta } = useCmsSiteMeta();
+  const [category, setCategory] = useState<InquiryCategory>(INQUIRY_CATEGORIES[0]);
+  const successRef = useRef<HTMLHeadingElement>(null);
+
+  // P1-2: category preselect from card links + live hash changes.
+  useEffect(() => {
+    const apply = () => {
+      const match = categoryFromUrl();
+      if (match) setCategory(match);
+    };
+    apply();
+    window.addEventListener("hashchange", apply);
+    return () => window.removeEventListener("hashchange", apply);
+  }, []);
+
+  // P1-5: move keyboard/screen-reader focus to the success heading.
+  useEffect(() => {
+    if (status === "success") successRef.current?.focus();
+  }, [status]);
+
+  // P0-4: analytics conversion — fires once per successful enquiry.
+  useEffect(() => {
+    if (status === "success") {
+      try {
+        (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag?.(
+          "event",
+          "generate_lead",
+          { category },
+        );
+        (window as unknown as { plausible?: (...args: unknown[]) => void }).plausible?.(
+          "Lead",
+          { props: { category } },
+        );
+      } catch {
+        // Analytics must never break the form.
+      }
+    }
+  }, [status, category]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFormError(null);
     const form = event.currentTarget;
     const data = new FormData(form);
-    const payload: InquiryInput = {
-      name: String(data.get("name") ?? "").trim(),
-      company: String(data.get("company") ?? "").trim(),
-      email: String(data.get("email") ?? "").trim(),
-      phone: String(data.get("phone") ?? "").trim(),
-      category: String(data.get("category") ?? "General enquiry").trim(),
-      message: String(data.get("message") ?? "").trim(),
-    };
-
-    if (!payload.name || !payload.email || !payload.message) {
-      setFormError("Please fill in your name, email, and message.");
-      return;
-    }
-
-    const ok = await submit(payload);
-    if (ok) {
-      form.reset();
-    }
+    const ok = await submit({
+      name: String(data.get("name") ?? ""),
+      company: String(data.get("company") ?? ""),
+      email: String(data.get("email") ?? ""),
+      phone: String(data.get("phone") ?? ""),
+      category,
+      message: String(data.get("message") ?? ""),
+      website: String(data.get("website") ?? ""),
+    });
+    if (ok) form.reset();
   }
 
   const isSubmitting = status === "submitting";
+  const whatsappHref = contact.whatsappHref?.trim() || null;
 
   return (
     <section
@@ -52,34 +103,55 @@ export default function Contact() {
       <Container className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div>
           <SectionHeading
-            eyebrow="Final CTA"
+            eyebrow={section.eyebrow}
             headingId="contact-heading"
-            title="Let's Talk Trade"
-            description="Tell us what you want to import or export. Our trading desk replies within one business day with price, lead time, and shipping options — no obligation."
+            title={section.headline}
+            description={contact.responseNote ?? section.body}
           />
           <ul className="mt-6 space-y-3 text-sm text-slate-700">
             <li>
               <span className="font-semibold text-navy-950">Email:</span>{" "}
               <a
-                href={`mailto:${site.contact.email}`}
+                href={`mailto:${contact.email}`}
                 className="rounded-sm text-teal-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
-                {site.contact.email}
+                {contact.email}
               </a>
             </li>
             <li>
               <span className="font-semibold text-navy-950">Phone / WhatsApp:</span>{" "}
               <a
-                href={site.contact.phoneHref}
+                href={contact.phoneHref}
                 className="rounded-sm text-teal-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
-                {site.contact.phoneDisplay}
+                {contact.phoneDisplay}
               </a>
+              {whatsappHref ? (
+                <a
+                  href={
+                    whatsappHref.startsWith("http")
+                      ? whatsappHref
+                      : `https://wa.me/${whatsappHref.replace(/\D/g, "")}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-2 inline-flex items-center gap-1 rounded-full border border-teal-700/30 bg-teal-700/5 px-3 py-1 text-xs font-semibold text-teal-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none"
+                >
+                  Chat on WhatsApp
+                  <span aria-hidden="true">→</span>
+                </a>
+              ) : null}
             </li>
             <li>
               <span className="font-semibold text-navy-950">Office:</span>{" "}
-              {site.contact.office}
+              {contact.office}
             </li>
+            {contact.hours ? (
+              <li>
+                <span className="font-semibold text-navy-950">Hours:</span>{" "}
+                {contact.hours}
+              </li>
+            ) : null}
           </ul>
         </div>
 
@@ -89,7 +161,7 @@ export default function Contact() {
               role="status"
               className="flex h-full flex-col items-start justify-center gap-3"
             >
-              <h3 className="text-xl font-semibold text-navy-950">
+              <h3 ref={successRef} tabIndex={-1} className="text-xl font-semibold text-navy-950 focus:outline-none">
                 Message received
               </h3>
               <p className="text-sm text-slate-600">
@@ -104,10 +176,21 @@ export default function Contact() {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} noValidate={false} aria-describedby="contact-desc">
+            <form onSubmit={handleSubmit} noValidate aria-describedby="contact-desc">
               <p id="contact-desc" className="sr-only">
                 Enquiry form. Name, email, and message are required.
               </p>
+
+              {/* P0-1 honeypot: real users never fill this; bots do. */}
+              <input
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="hidden"
+                defaultValue=""
+              />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -199,12 +282,13 @@ export default function Contact() {
                   id="contact-category"
                   name="category"
                   disabled={isSubmitting}
-                  defaultValue={INQUIRY_CATEGORIES[0]}
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value as InquiryCategory)}
                   className={inputClasses}
                 >
-                  {INQUIRY_CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
+                  {INQUIRY_CATEGORIES.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
                     </option>
                   ))}
                 </select>
@@ -229,9 +313,9 @@ export default function Contact() {
                 />
               </div>
 
-              {(formError || error) && (
+              {error && (
                 <p role="alert" className="mt-3 text-sm font-medium text-red-700">
-                  {formError ?? error}
+                  {error}
                 </p>
               )}
 
@@ -240,7 +324,7 @@ export default function Contact() {
                 disabled={isSubmitting}
                 className="mt-5 w-full rounded-lg bg-gold-500 px-4 py-3 text-sm font-semibold text-navy-950 transition-colors hover:bg-gold-400 disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-gold-500 focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto sm:px-8"
               >
-                {isSubmitting ? "Sending…" : site.primaryCta}
+                {isSubmitting ? "Sending…" : primaryCta}
               </button>
               <p className="mt-3 text-xs text-slate-500">
                 We reply within one business day with price, lead time, and shipping options.

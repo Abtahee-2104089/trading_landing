@@ -1,51 +1,22 @@
+"use client";
+
 import Image from "next/image";
+import { useCmsProducts, useCmsSection } from "@/lib/hooks/useCmsContent";
 
-const categories = [
-  {
-    title: "Electronics & Electrical",
-    description: "Sourced consumer electronics, components, and electrical goods with QC checks before dispatch.",
-    items: ["Consumer electronics", "Mobile accessories", "Electrical fittings"],
-    image: "/categories/electronics.jpg",
-    alt: "Consumer electronics and electrical goods",
-  },
-  {
-    title: "Foodstuff & Agro Commodities",
-    description: "Bulk and packaged food trading with cold-chain partners and documentation handled end to end.",
-    items: ["Rice, sugar & oils", "Spices & pulses", "Packaged foods"],
-    image: "/categories/foodstuff-agro.jpg",
-    alt: "Bulk foodstuff and agro commodities",
-  },
-  {
-    title: "Textiles & Garments",
-    description: "Fabrics, apparel, and home textiles from vetted mills across Asia, routed via Jebel Ali.",
-    items: ["Fabrics & yarn", "Ready-made garments", "Home textiles"],
-    image: "/categories/textiles-garments.jpg",
-    alt: "Colorful textile rolls and garments",
-  },
-  {
-    title: "Building Materials & Hardware",
-    description: "Construction supply for GCC projects — consolidated shipments to cut freight cost per unit.",
-    items: ["Sanitary & tiles", "Hardware & tools", "MEP supplies"],
-    image: "/categories/building-materials.jpg",
-    alt: "Building materials and hardware supplies",
-  },
-  {
-    title: "Cosmetics & Personal Care",
-    description: "Compliant beauty and personal-care imports with labelling and municipality requirements covered.",
-    items: ["Skincare & haircare", "Fragrances", "Hygiene essentials"],
-    image: "/categories/cosmetics-personal-care.jpg",
-    alt: "Cosmetics and personal care products",
-  },
-  {
-    title: "Auto Parts & Industrial",
-    description: "Genuine and aftermarket parts plus industrial consumables for fleets and workshops.",
-    items: ["Spare parts", "Lubricants", "Industrial consumables"],
-    image: "/categories/auto-parts-industrial.jpg",
-    alt: "Auto parts and industrial components",
-  },
-];
-
+/**
+ * Trading Categories (= products) — CMS-driven (Pal, Frontend B).
+ *
+ * Renders `products.listPublished` (title/desc/items/image/alt). Falls back
+ * to verbatim live copy when CMS is empty/backend missing. Empty CMS with a
+ * live backend shows "No categories published yet." (no crash).
+ *
+ * P1-2: every Enquire link preselects the category in #contact via
+ * `#contact?category=<slug>` (Contact reads hash + search param).
+ */
 export default function TradingCategories() {
+  const { products, isLive } = useCmsProducts();
+  const { section } = useCmsSection("categories");
+
   return (
     <section
       id="categories"
@@ -55,64 +26,71 @@ export default function TradingCategories() {
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold tracking-widest text-teal-700 uppercase">
-            What we trade
+            {section.eyebrow}
           </p>
           <h2
             id="categories-heading"
             className="mt-2 text-3xl font-bold tracking-tight text-navy-950 sm:text-4xl"
           >
-            What We Trade
+            {section.headline}
           </h2>
-          <p className="mt-3 text-base text-slate-600">
-            Six core verticals with vetted suppliers, consolidated shipping, and
-            quality inspection — so you can order mixed containers with confidence.
-          </p>
+          <p className="mt-3 text-base text-slate-600">{section.body}</p>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((category) => (
-            <article
-              key={category.title}
-              className="group flex flex-col overflow-hidden rounded-2xl border border-navy-900/10 bg-cream-50 transition-shadow duration-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-teal-700 focus-within:ring-offset-2"
-            >
-              <div className="relative h-48 w-full overflow-hidden bg-navy-50">
-                <Image
-                  src={category.image}
-                  alt={category.alt}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </div>
-              <div className="flex flex-1 flex-col p-6">
-              <h3 className="text-lg font-semibold text-navy-950">
-                {category.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                {category.description}
-              </p>
-              <ul className="mt-4 space-y-1.5 text-sm text-slate-700">
-                {category.items.map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <span
-                      aria-hidden="true"
-                      className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-700"
+        {isLive && products.length === 0 ? (
+          <p className="mt-10 text-center text-sm text-slate-500">
+            No categories published yet.
+          </p>
+        ) : (
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {products.map((category) => {
+              const src = category.imageUrl ?? category.imageUrlFallback ?? "/categories/electronics.jpg";
+              return (
+                <article
+                  key={category.slug}
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-navy-900/10 bg-cream-50 transition-shadow duration-200 hover:shadow-lg focus-within:ring-2 focus-within:ring-teal-700 focus-within:ring-offset-2"
+                >
+                  <div className="relative h-48 w-full overflow-hidden bg-navy-50">
+                    <Image
+                      src={src}
+                      alt={category.alt}
+                      fill
+                      loading="lazy"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <a
-                href="#contact"
-                className="mt-5 inline-flex w-fit items-center gap-1 text-sm font-semibold text-teal-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none rounded-sm"
-              >
-                Enquire about this category
-                <span aria-hidden="true">→</span>
-              </a>
-              </div>
-            </article>
-          ))}
-        </div>
+                  </div>
+                  <div className="flex flex-1 flex-col p-6">
+                    <h3 className="text-lg font-semibold text-navy-950">
+                      {category.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                      {category.description}
+                    </p>
+                    <ul className="mt-4 space-y-1.5 text-sm text-slate-700">
+                      {category.items.map((item) => (
+                        <li key={item} className="flex items-start gap-2">
+                          <span
+                            aria-hidden="true"
+                            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-700"
+                          />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <a
+                      href={`#contact?category=${encodeURIComponent(category.slug)}`}
+                      className="mt-5 inline-flex w-fit items-center gap-1 rounded-sm text-sm font-semibold text-teal-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    >
+                      Enquire about this category
+                      <span aria-hidden="true">→</span>
+                    </a>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

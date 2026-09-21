@@ -1,9 +1,10 @@
 import Container from "@/app/components/ui/Container";
 import { site } from "@/lib/site";
+import { useSiteContent } from "@/lib/hooks/useSiteContent";
 
 export default function Footer() {
   const { content } = useSiteContent();
-  const { footer, nav, contact, primaryCta, primaryCtaHref } = content;
+  void content;
 
   return (
     <footer className="bg-navy-950 text-slate-300">

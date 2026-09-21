@@ -1,37 +1,33 @@
+"use client";
+
 import Container from "@/app/components/ui/Container";
 import SectionHeading from "@/app/components/ui/SectionHeading";
-
-const pillars = [
-  {
-    title: "Verified suppliers only",
-    text: "Every factory and wholesaler passes trade-license, export-history, and sample checks before listing.",
-  },
-  {
-    title: "Pre-shipment QC",
-    text: "Photos, videos, and third-party inspection reports shared before you release the balance payment.",
-  },
-  {
-    title: "Transparent pricing",
-    text: "Itemised quotes: product cost, freight, customs, and margin — no hidden markups.",
-  },
-  {
-    title: "Compliant documentation",
-    text: "Invoices, packing lists, certificates of origin, and municipality approvals handled for you.",
-  },
-];
-
-const assurances = [
-  "No invented certifications, clients, or volumes — placeholder copy until verified",
-  "Inspection evidence shared before payment release",
-  "Verified credentials and references shared on request",
-];
+import {
+  FALLBACK_TRUST_ASSURANCES,
+  FALLBACK_TRUST_PILLARS,
+  useCmsSection,
+} from "@/lib/hooks/useCmsContent";
 
 /**
- * Trust & Compliance — credible placeholder copy only.
+ * Trust & Compliance — CMS-driven (Pal, Frontend B).
+ *
+ * Eyebrow/headline/body/pillars come from `sections[key=trust]`.
  * Content rule: never invent certifications, clients, volumes, awards,
- * statistics, or partnerships. Numbers appear here only after verification.
+ * statistics, or partnerships — numbers appear only after verification
+ * via `/admin/sections#trust`.
+ *
+ * P1-3: the hardcoded placeholder disclaimer line ("No invented
+ * certifications … placeholder copy until verified") is DELETED and must
+ * never ship — assurances below are neutral, verifiable statements.
  */
 export default function Trust() {
+  const { section } = useCmsSection("trust");
+
+  const pillars =
+    section.items && section.items.length > 0
+      ? section.items.filter((item) => item.meta !== "stat")
+      : FALLBACK_TRUST_PILLARS;
+
   return (
     <section
       id="trust"
@@ -40,10 +36,10 @@ export default function Trust() {
     >
       <Container>
         <SectionHeading
-          eyebrow="Trust & compliance"
+          eyebrow={section.eyebrow}
           headingId="trust-heading"
-          title="Built on Reliability and Compliance"
-          description="Importing is risky when you can't see the goods. We close that gap with inspection evidence, clear paperwork, and dependable supply relationships — and we make no claims we can't prove."
+          title={section.headline}
+          description={section.body}
         />
 
         <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -69,7 +65,7 @@ export default function Trust() {
         </div>
 
         <ul className="mt-6 rounded-2xl border border-gold-500/30 bg-gold-300/15 p-6 text-sm leading-relaxed text-navy-900">
-          {assurances.map((item) => (
+          {FALLBACK_TRUST_ASSURANCES.map((item) => (
             <li key={item} className="flex items-start gap-2 py-1">
               <span aria-hidden="true" className="font-bold text-gold-600">·</span>
               {item}
