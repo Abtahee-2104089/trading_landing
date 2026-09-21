@@ -27,7 +27,7 @@ export default function About() {
         <div className="mt-12 grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div>
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {advantages.map((item) => (
+            {about.advantages.map((item: { title: string; text: string }) => (
               <li
                 key={item.title}
                 className="rounded-2xl border border-navy-900/10 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md"
