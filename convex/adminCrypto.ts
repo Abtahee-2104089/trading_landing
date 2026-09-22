@@ -1,5 +1,9 @@
 // ---------------------------------------------------------------------------
-// Admin auth crypto — pure TypeScript, zero dependencies.
+// Admin auth crypto — pure TypeScript, zero dependencies, zero Web-API
+// globals (`atob`/`btoa`/`TextEncoder`/`TextDecoder` are NOT available in
+// the Convex query/mutation runtime — a previous version used them and
+// crashed every session check on deployment with a generic "Server Error"
+// while all local tests passed).
 //
 // Imported from THREE runtimes, so it must stay free of Node/Convex-only
 // APIs (`node:crypto`, `convex/server`):
@@ -29,8 +33,115 @@ function rotr(x: number, n: number): number {
   return (x >>> n) | (x << (32 - n));
 }
 
+function utf8Encode(input: string): Uint8Array {
+  const bytes: number[] = [];
+  for (let i = 0; i < input.length; i++) {
+    let cp = input.charCodeAt(i);
+    if (cp >= 0xd800 && cp <= 0xdbff && i + 1 < input.length) {
+      const lo = input.charCodeAt(i + 1);
+      if (lo >= 0xdc00 && lo <= 0xdfff) {
+        cp = 0x10000 + ((cp - 0xd800) << 10) + (lo - 0xdc00);
+        i++;
+      }
+    }
+    if (cp < 0x80) {
+      bytes.push(cp);
+    } else if (cp < 0x800) {
+      bytes.push(0xc0 | (cp >> 6), 0x80 | (cp & 0x3f));
+    } else if (cp < 0x10000) {
+      bytes.push(
+        0xe0 | (cp >> 12),
+        0x80 | ((cp >> 6) & 0x3f),
+        0x80 | (cp & 0x3f),
+      );
+    } else {
+      bytes.push(
+        0xf0 | (cp >> 18),
+        0x80 | ((cp >> 12) & 0x3f),
+        0x80 | ((cp >> 6) & 0x3f),
+        0x80 | (cp & 0x3f),
+      );
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+function utf8Decode(bytes: Uint8Array): string {
+  let out = "";
+  let i = 0;
+  while (i < bytes.length) {
+    const b0 = bytes[i];
+    if (b0 < 0x80) {
+      out += String.fromCharCode(b0);
+      i++;
+    } else if ((b0 & 0xe0) === 0xc0 && i + 1 < bytes.length) {
+      out += String.fromCharCode(
+        ((b0 & 0x1f) << 6) | (bytes[i + 1] & 0x3f),
+      );
+      i += 2;
+    } else if ((b0 & 0xf0) === 0xe0 && i + 2 < bytes.length) {
+      out += String.fromCharCode(
+        ((b0 & 0x0f) << 12) |
+          ((bytes[i + 1] & 0x3f) << 6) |
+          (bytes[i + 2] & 0x3f),
+      );
+      i += 3;
+    } else if ((b0 & 0xf8) === 0xf0 && i + 3 < bytes.length) {
+      const cp =
+        ((b0 & 0x07) << 18) |
+        ((bytes[i + 1] & 0x3f) << 12) |
+        ((bytes[i + 2] & 0x3f) << 6) |
+        (bytes[i + 3] & 0x3f);
+      const v = cp - 0x10000;
+      out += String.fromCharCode(0xd800 + (v >> 10), 0xdc00 + (v & 0x3ff));
+      i += 4;
+    } else {
+      // Invalid sequence — skip one byte rather than throwing (fail-closed
+      // callers treat the token as invalid).
+      i++;
+    }
+  }
+  return out;
+}
+
+const B64 =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+function b64UrlEncodeBytes(bytes: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 3) {
+    const a = bytes[i];
+    const b = i + 1 < bytes.length ? bytes[i + 1] : 0;
+    const c = i + 2 < bytes.length ? bytes[i + 2] : 0;
+    const n = (a << 16) | (b << 8) | c;
+    s += B64[(n >> 18) & 63] + B64[(n >> 12) & 63];
+    s += i + 1 < bytes.length ? B64[(n >> 6) & 63] : "";
+    s += i + 2 < bytes.length ? B64[n & 63] : "";
+  }
+  return s;
+}
+
+function b64UrlDecodeToBytes(input: string): Uint8Array | null {
+  const s = input.replace(/-/g, "+").replace(/_/g, "/");
+  if (s.length % 4 === 1) return null;
+  const quadLen = s.length + ((4 - (s.length % 4)) % 4);
+  const out: number[] = [];
+  for (let i = 0; i < quadLen; i += 4) {
+    const c0 = B64.indexOf(s[i] ?? "=");
+    const c1 = B64.indexOf(s[i + 1] ?? "=");
+    const c2 = s[i + 2] === undefined || s[i + 2] === "=" ? 64 : B64.indexOf(s[i + 2]);
+    const c3 = s[i + 3] === undefined || s[i + 3] === "=" ? 64 : B64.indexOf(s[i + 3]);
+    if (c0 < 0 || c1 < 0 || c2 < 0 || c3 < 0) return null;
+    const n = (c0 << 18) | (c1 << 12) | ((c2 & 63) << 6) | (c3 & 63);
+    out.push((n >> 16) & 0xff);
+    if (c2 !== 64) out.push((n >> 8) & 0xff);
+    if (c3 !== 64) out.push(n & 0xff);
+  }
+  return new Uint8Array(out);
+}
+
 function utf8Bytes(input: string): Uint8Array {
-  return new TextEncoder().encode(input);
+  return utf8Encode(input);
 }
 
 function sha256Bytes(data: Uint8Array): Uint8Array {
@@ -206,18 +317,12 @@ export function verifyPassword(
 export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function b64UrlEncode(input: string): string {
-  const bytes = utf8Bytes(input);
-  let binary = "";
-  for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return b64UrlEncodeBytes(utf8Encode(input));
 }
 
-function b64UrlDecode(input: string): string {
-  const padded = input.replace(/-/g, "+").replace(/_/g, "/");
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new TextDecoder().decode(bytes);
+function b64UrlDecode(input: string): string | null {
+  const bytes = b64UrlDecodeToBytes(input);
+  return bytes === null ? null : utf8Decode(bytes);
 }
 
 /** Mint `emailB64.expiryHex.hmac` — verified by middleware + Convex. */
@@ -242,8 +347,10 @@ export function verifySession(
   if (!timingSafeEqualStr(sig, expected)) return null;
   const expiresAtMs = parseInt(expiryHex, 16);
   if (!Number.isFinite(expiresAtMs) || expiresAtMs <= nowMs) return null;
+  const emailB64Decoded = b64UrlDecode(emailB64);
+  if (emailB64Decoded === null) return null;
   try {
-    const email = b64UrlDecode(emailB64).toLowerCase();
+    const email = emailB64Decoded.toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
     return { email, expiresAtMs };
   } catch {

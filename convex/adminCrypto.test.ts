@@ -40,6 +40,20 @@ describe("adminCrypto", () => {
     expect(timingSafeEqualStr("abc", "abcd")).toBe(false);
   });
 
+  it("session token email part is standard base64url", () => {
+    const secret = "test-secret";
+    const token = signSession("admin@example.com", Date.now() + 60_000, secret);
+    // "admin@example.com" in base64url — verifiable with any external tool.
+    expect(token.split(".")[0]).toBe("YWRtaW5AZXhhbXBsZS5jb20");
+  });
+
+  it("rejects malformed token shapes without throwing", () => {
+    const secret = "test-secret";
+    expect(verifySession("!!!.1a2b3c.00", secret)).toBeNull();
+    expect(verifySession("a.b", secret)).toBeNull();
+    expect(verifySession("", secret)).toBeNull();
+  });
+
   it("session tokens verify, reject tampering and expiry", () => {
     const secret = "test-secret";
     const token = signSession("Admin@Example.com", Date.now() + 60_000, secret);
