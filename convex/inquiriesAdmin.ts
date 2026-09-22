@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { paginationOptsValidator, paginationResultValidator } from "convex/server";
 import { mutation, query } from "./_generated/server";
 import { inquiryDocValidator, inquiryStatusValidator } from "./inquiries";
-import { requireAdmin } from "./adminAuth";
+import { requireAdmin, adminSecretArgs } from "./adminAuth";
 
 // ---------------------------------------------------------------------------
 // Admin-only inquiry wrappers for `/admin/inquiries` (Pal).
@@ -17,10 +17,11 @@ export const list = query({
   args: {
     status: v.optional(inquiryStatusValidator),
     paginationOpts: paginationOptsValidator,
+    ...adminSecretArgs,
   },
   returns: paginationResultValidator(inquiryDocValidator),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     if (args.status !== undefined) {
       return await ctx.db
         .query("inquiries")
@@ -36,10 +37,10 @@ export const list = query({
 });
 
 export const get = query({
-  args: { id: v.id("inquiries") },
+  args: { id: v.id("inquiries"), ...adminSecretArgs },
   returns: v.union(inquiryDocValidator, v.null()),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     return await ctx.db.get("inquiries", args.id);
   },
 });
@@ -48,10 +49,11 @@ export const setStatus = mutation({
   args: {
     id: v.id("inquiries"),
     status: inquiryStatusValidator,
+    ...adminSecretArgs,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     const existing = await ctx.db.get("inquiries", args.id);
     if (!existing) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Inquiry not found." });

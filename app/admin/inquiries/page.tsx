@@ -5,6 +5,7 @@ import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { isConvexConfigured } from "@/app/providers/convex-provider";
+import { adminAuthArgs } from "@/lib/admin-token";
 import type { Id } from "@/convex/_generated/dataModel";
 import { FormError, StatusPill } from "@/app/components/admin/fields";
 
@@ -26,8 +27,8 @@ export default function AdminInquiriesPage() {
     api.inquiriesAdmin.list,
     configured
       ? filter === "all"
-        ? {}
-        : { status: filter }
+        ? adminAuthArgs()
+        : { ...adminAuthArgs(), status: filter }
       : "skip",
     { initialNumItems: 20 },
   );
@@ -37,7 +38,7 @@ export default function AdminInquiriesPage() {
   async function changeStatus(id: Id<"inquiries">, next: Status) {
     setError(null);
     try {
-      await setStatus({ id, status: next });
+      await setStatus({ ...adminAuthArgs(), id, status: next });
     } catch {
       setError("Status change failed.");
     }

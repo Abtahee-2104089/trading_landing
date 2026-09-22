@@ -3,16 +3,17 @@
 import { useEffect, useState } from "react";
 import Container from "@/app/components/ui/Container";
 import Button from "@/app/components/ui/Button";
-import { useSiteContent } from "@/lib/hooks/useSiteContent";
+import { useCmsNav, useCmsSite } from "@/lib/hooks/useCmsContent";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const { content } = useSiteContent();
-  const navLinks = content.nav;
-  const brandName = content.siteName;
-  const brandTagline = content.tagline;
-  const ctaLabel = content.primaryCta;
-  const ctaHref = content.primaryCtaHref;
+  // P2-3: single nav source — `siteSettings.nav` via CMS, fallback when empty.
+  const { nav: navLinks } = useCmsNav();
+  const { site: settings } = useCmsSite();
+  const brandName = settings.siteName;
+  const brandTagline = settings.tagline;
+  const ctaLabel = settings.primaryCta;
+  const ctaHref = "#contact";
 
   useEffect(() => {
     if (!open) return;

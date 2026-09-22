@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { isConvexConfigured } from "@/app/providers/convex-provider";
+import { adminAuthArgs } from "@/lib/admin-token";
 
 const cards = [
   { href: "/admin/site", title: "Site text & contact", text: "Name, tagline, CTAs, footer copy, office / email / phone / hours / WhatsApp." },
@@ -16,8 +17,8 @@ const cards = [
 /** CMS dashboard: links + live counts. */
 export default function AdminDashboard() {
   const configured = isConvexConfigured();
-  const products = useQuery(api.cms.listProductsAdmin, configured ? {} : "skip");
-  const services = useQuery(api.cms.listServicesAdmin, configured ? {} : "skip");
+  const products = useQuery(api.cms.listProductsAdmin, configured ? adminAuthArgs() : "skip");
+  const services = useQuery(api.cms.listServicesAdmin, configured ? adminAuthArgs() : "skip");
 
   return (
     <div>

@@ -9,6 +9,8 @@
  */
 
 import type * as adminAuth from "../adminAuth.js";
+import type * as adminCrypto from "../adminCrypto.js";
+import type * as adminUsers from "../adminUsers.js";
 import type * as cms from "../cms.js";
 import type * as emails from "../emails.js";
 import type * as inquiries from "../inquiries.js";
@@ -27,6 +29,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   adminAuth: typeof adminAuth;
+  adminCrypto: typeof adminCrypto;
+  adminUsers: typeof adminUsers;
   cms: typeof cms;
   emails: typeof emails;
   inquiries: typeof inquiries;

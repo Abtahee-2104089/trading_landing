@@ -89,8 +89,13 @@ export const siteSettingsValidator = v.object({
   footer: footerValidator,
   contact: contactValidator,
   nav: v.array(navItemValidator),
+  // Legacy Convex Storage image refs (kept as fallback for old rows).
   heroImageStorageId: v.optional(v.id("_storage")),
   aboutImageStorageId: v.optional(v.id("_storage")),
+  // Primary image source: UploadThing (utfs.io) URLs, set at /admin/site.
+  // Empty string = cleared (resolver treats "" as absent).
+  heroImageUrl: v.optional(v.string()),
+  aboutImageUrl: v.optional(v.string()),
   updatedAt: v.optional(v.number()),
 });
 
@@ -109,6 +114,10 @@ export const sectionValidator = v.object({
   body: v.string(),
   items: v.optional(v.array(sectionItemValidator)),
   imageStorageId: v.optional(v.id("_storage")),
+  // Primary image source: UploadThing URL ("" = cleared). Sections are
+  // fixed slots (hero|about|network|trust|contact|footer) — every slot's
+  // text AND image is editable, new entries are products/services/media.
+  imageUrl: v.optional(v.string()),
   updatedAt: v.optional(v.number()),
 });
 
@@ -137,7 +146,11 @@ export const serviceValidator = v.object({
 });
 
 export const mediaValidator = v.object({
-  storageId: v.id("_storage"),
+  // Legacy Convex Storage ref (optional since the UploadThing migration —
+  // old rows keep resolving through it).
+  storageId: v.optional(v.id("_storage")),
+  // UploadThing file key (for dashboard lookup / future API deletes).
+  key: v.optional(v.string()),
   url: v.string(),
   alt: v.string(),
   usedBy: v.string(),
@@ -208,9 +221,22 @@ export default defineSchema({
   // Global Network journey + capabilities.
   services: defineTable(serviceValidator).index("by_sortOrder", ["sortOrder"]),
 
-  // Media library: every CMS image is a Convex Storage file + this row.
-  // Image fields elsewhere store `storageId`; rendered via the stored URL.
+  // Media library: every CMS image is an UploadThing (utfs.io) file + this
+  // row. Image fields elsewhere store the public URL; this table is the
+  // browsable library with alt text + usage tracking.
   media: defineTable(mediaValidator).index("by_storageId", ["storageId"]),
+
+  // CMS staff accounts (email + stretched password hash). The FIRST account
+  // is created at `/admin/setup` (allowed only while the table is empty);
+  // further changes happen at `/admin/account`. Never store plaintext.
+  adminUsers: defineTable({
+    email: v.string(),
+    salt: v.string(),
+    hash: v.string(),
+    iterations: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+  }).index("by_email", ["email"]),
 
   // P0-1 throttle windows for `inquiries.submit`.
   // key = `submit:email:<normalized>:minute | :hour` (IP key reserved —

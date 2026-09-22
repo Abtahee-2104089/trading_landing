@@ -1,12 +1,33 @@
+"use client";
+
 import Image from "next/image";
 import Container from "@/app/components/ui/Container";
 import Button from "@/app/components/ui/Button";
-import { useSiteContent } from "@/lib/hooks/useSiteContent";
+import { FALLBACK_SITE_DOC, useCmsSite } from "@/lib/hooks/useCmsContent";
 
-/** Hero — value prop above the fold with dual CTAs + port/route visual. */
+/**
+ * Hero — CMS-driven (Orny, Frontend A).
+ *
+ * Badge / headline / sub / assurances / CTAs come from
+ * `siteSettings.hero`; the visual comes from `heroImageUrl`
+ * (Convex Storage) with the local gateway graphic as fallback.
+ *
+ * P1-4: the old animated clip-art dashes are gone —
+ * the backdrop is two static gradient routes with `aria-hidden`, and the
+ * photo/visual carries the section.
+ */
 export default function Hero() {
-  const { content } = useSiteContent();
-  const hero = content.hero;
+  const { site } = useCmsSite();
+  const hero = site.hero ?? FALLBACK_SITE_DOC.hero;
+  const imageSrc = site.heroImageUrl ?? "/images/hero-gateway.svg";
+
+  // Split a trailing "Trusted …" clause into gold without breaking layout
+  // at 390px (`text-balance` keeps the wrap clean).
+  const accentMarker = "Trusted from the UAE.";
+  const hasAccent = hero.headline.includes(accentMarker);
+  const headlineMain = hasAccent
+    ? hero.headline.replace(accentMarker, "").trim()
+    : hero.headline;
 
   return (
     <section
@@ -14,7 +35,7 @@ export default function Hero() {
       aria-labelledby="home-heading"
       className="relative scroll-mt-20 overflow-hidden bg-navy-950 text-white"
     >
-      {/* subtle route treatment behind copy */}
+      {/* static route treatment behind copy (decorative, no animation) */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-teal-600/20 blur-3xl" />
         <div className="absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-gold-500/15 blur-3xl" />
@@ -31,7 +52,6 @@ export default function Hero() {
             stroke="#D9B545"
             strokeWidth="2"
             strokeDasharray="7 7"
-            className="animate-route-dash"
           />
           <path
             d="M-20 350 C 200 320, 380 280, 560 250 S 720 210, 830 180"
@@ -39,7 +59,6 @@ export default function Hero() {
             strokeWidth="2"
             strokeDasharray="7 7"
             strokeOpacity="0.7"
-            className="animate-route-dash"
           />
         </svg>
       </div>
@@ -54,17 +73,28 @@ export default function Hero() {
             id="home-heading"
             className="mt-4 text-4xl leading-[1.05] font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl"
           >
-            {hero.headline} <span className="text-gold-400">{hero.headlineAccent}</span>
+            {headlineMain}{" "}
+            {hasAccent ? (
+              <span className="text-gold-400">{accentMarker}</span>
+            ) : null}
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
             {hero.sub}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button href={hero.ctaPrimaryHref} variant="primary" size="lg">
-              {hero.ctaPrimaryLabel}
+            <Button
+              href={hero.ctaPrimaryHref ?? "#contact"}
+              variant="primary"
+              size="lg"
+            >
+              {hero.ctaPrimaryLabel ?? site.primaryCta}
             </Button>
-            <Button href={hero.ctaSecondaryHref} variant="outline-light" size="lg">
-              {hero.ctaSecondaryLabel}
+            <Button
+              href={hero.ctaSecondaryHref ?? "#categories"}
+              variant="outline-light"
+              size="lg"
+            >
+              {hero.ctaSecondaryLabel ?? "Explore Trading Categories"}
             </Button>
           </div>
           <dl className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -85,8 +115,8 @@ export default function Hero() {
         <div className="relative">
           <div className="overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/40">
             <Image
-              src={hero.imageSrc}
-              alt={hero.imageAlt}
+              src={imageSrc}
+              alt="Cargo vessel and port cranes at dusk with trade routes radiating from the UAE hub at Jebel Ali"
               width={800}
               height={640}
               priority

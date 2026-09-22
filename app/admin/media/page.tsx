@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { isConvexConfigured } from "@/app/providers/convex-provider";
+import { adminAuthArgs } from "@/lib/admin-token";
 import type { Id } from "@/convex/_generated/dataModel";
 import { FormError, FormOk } from "@/app/components/admin/fields";
 import ImageUploader from "@/app/components/admin/ImageUploader";
@@ -11,7 +12,7 @@ import ImageUploader from "@/app/components/admin/ImageUploader";
 /** `/admin/media` — grid of media rows + uploader + copy-URL. */
 export default function AdminMediaPage() {
   const configured = isConvexConfigured();
-  const rows = useQuery(api.media.list, configured ? {} : "skip");
+  const rows = useQuery(api.media.list, configured ? adminAuthArgs() : "skip");
   const removeMedia = useMutation(api.media.remove);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export default function AdminMediaPage() {
     setError(null);
     if (!window.confirm("Delete this image (storage + row)?")) return;
     try {
-      await removeMedia({ id });
+      await removeMedia({ ...adminAuthArgs(), id });
     } catch {
       setError("Delete failed.");
     }
@@ -42,7 +43,9 @@ export default function AdminMediaPage() {
     <div>
       <h1 className="text-2xl font-bold">Media library</h1>
       <p className="mt-1 text-sm text-slate-600">
-        Every CMS image is a Convex Storage file + row. Upload, copy the URL, paste it into a product or section.
+        Every CMS image is an UploadThing (utfs.io) file + row. Upload, copy
+        the URL, paste it into a product or section. Deleting removes the row
+        (the file itself stays on UploadThing until removed there).
       </p>
       <FormError message={error} />
       <FormOk message={notice} />
