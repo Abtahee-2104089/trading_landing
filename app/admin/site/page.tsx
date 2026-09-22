@@ -5,7 +5,9 @@ import type { FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { isConvexConfigured } from "@/app/providers/convex-provider";
+import { adminAuthArgs } from "@/lib/admin-token";
 import { Field, FormError, FormOk, PrimaryButton, fieldInput } from "@/app/components/admin/fields";
+import ImageUploader from "@/app/components/admin/ImageUploader";
 
 /**
  * `/admin/site` — one form for `siteSettings`.
@@ -34,6 +36,8 @@ export default function AdminSitePage() {
     whatsappHref: "",
     hours: "",
     responseNote: "",
+    heroImageUrl: "",
+    aboutImageUrl: "",
   });
   const [initialized, setInitialized] = useState(false);
 
@@ -55,6 +59,8 @@ export default function AdminSitePage() {
       whatsappHref: doc.contact.whatsappHref ?? "",
       hours: doc.contact.hours ?? "",
       responseNote: doc.contact.responseNote ?? "",
+      heroImageUrl: doc.heroImageUrl ?? "",
+      aboutImageUrl: doc.aboutImageUrl ?? "",
     });
   }
 
@@ -75,11 +81,14 @@ export default function AdminSitePage() {
     setBusy(true);
     try {
       await update({
+        ...adminAuthArgs(),
         patch: {
           siteName: form.siteName,
           tagline: form.tagline,
           description: form.description,
           primaryCta: form.primaryCta,
+          heroImageUrl: form.heroImageUrl.trim(),
+          aboutImageUrl: form.aboutImageUrl.trim(),
           footer: { about: form.footerAbout, bottomBar: form.footerBottomBar },
           contact: {
             office: form.office,
@@ -155,6 +164,25 @@ export default function AdminSitePage() {
 
         <FormError message={error} />
         <FormOk message={ok} />
+
+        <h2 className="pt-2 text-lg font-bold">Hero & about images</h2>
+        <p className="text-sm text-slate-600">
+          Upload (UploadThing), replace, or remove. Removing falls back to the
+          built-in graphics.
+        </p>
+        <ImageUploader
+          usedBy="site/hero"
+          currentUrl={form.heroImageUrl || null}
+          onUploaded={({ url }) => setForm((f) => ({ ...f, heroImageUrl: url }))}
+          onRemove={() => setForm((f) => ({ ...f, heroImageUrl: "" }))}
+        />
+        <ImageUploader
+          usedBy="site/about"
+          currentUrl={form.aboutImageUrl || null}
+          onUploaded={({ url }) => setForm((f) => ({ ...f, aboutImageUrl: url }))}
+          onRemove={() => setForm((f) => ({ ...f, aboutImageUrl: "" }))}
+        />
+
         <PrimaryButton disabled={busy}>{busy ? "Saving…" : "Save site settings"}</PrimaryButton>
       </form>
     </div>

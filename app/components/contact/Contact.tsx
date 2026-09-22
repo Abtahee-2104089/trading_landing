@@ -264,7 +264,7 @@ export default function Contact() {
                     name="phone"
                     type="tel"
                     autoComplete="tel"
-                    placeholder="+971 4 000 0000"
+                    placeholder="+971 5X XXX XXXX"
                     disabled={isSubmitting}
                     className={inputClasses}
                   />

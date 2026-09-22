@@ -9,7 +9,7 @@ import {
   serviceValidator,
   siteSettingsValidator,
 } from "./schema";
-import { requireAdmin } from "./adminAuth";
+import { requireAdmin, adminSecretArgs } from "./adminAuth";
 import { SEED_SITE_SETTINGS } from "./seedData";
 import type { Product, Service, SiteSettings } from "./seedData";
 
@@ -171,7 +171,8 @@ const publicProductValidator = productValidator.extend({
   imageUrl: v.union(v.string(), v.null()),
 });
 
-const publicSiteSettingsValidator = siteSettingsValidator.extend({
+const publicSiteSettingsValidator = v.object({
+  ...siteSettingsValidator.fields,
   heroImageUrl: v.union(v.string(), v.null()),
   aboutImageUrl: v.union(v.string(), v.null()),
 });
@@ -180,12 +181,30 @@ async function resolveImageUrl(
   ctx: QueryCtx | MutationCtx,
   storageId: Id<"_storage"> | undefined,
   fallback: string | undefined,
+  urlOverride?: string,
 ): Promise<string | null> {
+  // UploadThing URL wins ("" = cleared), then legacy Convex Storage, then
+  // the local fallback asset.
+  if (urlOverride !== undefined && urlOverride.trim() !== "") {
+    return urlOverride.trim();
+  }
   if (storageId !== undefined) {
     const url = await ctx.storage.getUrl(storageId);
     if (url) return url;
   }
-  return fallback ?? null;
+  const clean = (fallback ?? "").trim();
+  return clean !== "" ? clean : null;
+}
+
+/** UploadThing (or any https) image URL — "" clears the field. */
+function cleanImageUrl(value: string, field: string): string {
+  const trimmed = value.trim();
+  if (trimmed === "") return "";
+  if (trimmed.length > 2000) fail(`${field} is too long (max 2000 characters).`);
+  if (!/^https:\/\//.test(trimmed)) {
+    fail(`${field} must be an https:// URL (upload it in the Media library).`);
+  }
+  return trimmed;
 }
 
 // --- public queries (empty-DB safe: fallbacks, never throw) ------------------
@@ -211,6 +230,12 @@ export const getSiteSettings = query({
           ...(doc.aboutImageStorageId !== undefined
             ? { aboutImageStorageId: doc.aboutImageStorageId }
             : {}),
+          ...(doc.heroImageUrl !== undefined
+            ? { heroImageUrl: doc.heroImageUrl }
+            : {}),
+          ...(doc.aboutImageUrl !== undefined
+            ? { aboutImageUrl: doc.aboutImageUrl }
+            : {}),
         }
       : SEED_SITE_SETTINGS;
     return {
@@ -219,31 +244,47 @@ export const getSiteSettings = query({
         ctx,
         base.heroImageStorageId,
         undefined,
+        base.heroImageUrl,
       ),
       aboutImageUrl: await resolveImageUrl(
         ctx,
         base.aboutImageStorageId,
         undefined,
+        base.aboutImageUrl,
       ),
     };
   },
 });
 
+const publicSectionValidator = v.object({
+  ...sectionValidator.fields,
+  imageUrl: v.union(v.string(), v.null()),
+});
+
 export const getSections = query({
   args: {},
-  returns: v.array(sectionValidator),
+  returns: v.array(publicSectionValidator),
   handler: async (ctx) => {
     const docs = await ctx.db.query("sections").take(50);
-    return docs.map((doc) => ({
-      key: doc.key,
-      eyebrow: doc.eyebrow,
-      headline: doc.headline,
-      body: doc.body,
-      ...(doc.items !== undefined ? { items: doc.items } : {}),
-      ...(doc.imageStorageId !== undefined
-        ? { imageStorageId: doc.imageStorageId }
-        : {}),
-    }));
+    return await Promise.all(
+      docs.map(async (doc) => ({
+        key: doc.key,
+        eyebrow: doc.eyebrow,
+        headline: doc.headline,
+        body: doc.body,
+        ...(doc.items !== undefined ? { items: doc.items } : {}),
+        ...(doc.imageStorageId !== undefined
+          ? { imageStorageId: doc.imageStorageId }
+          : {}),
+        ...(doc.imageUrl !== undefined ? { imageUrl: doc.imageUrl } : {}),
+        imageUrl: await resolveImageUrl(
+          ctx,
+          doc.imageStorageId,
+          undefined,
+          doc.imageUrl,
+        ),
+      })),
+    );
   },
 });
 
@@ -314,10 +355,10 @@ const serviceAdminValidator = serviceValidator.extend({
 });
 
 export const listProductsAdmin = query({
-  args: {},
+  args: { ...adminSecretArgs },
   returns: v.array(productAdminValidator),
-  handler: async (ctx) => {
-    await requireAdmin(ctx);
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx, args.adminSecret);
     return await ctx.db
       .query("products")
       .withIndex("by_sortOrder")
@@ -326,19 +367,19 @@ export const listProductsAdmin = query({
 });
 
 export const getProductAdmin = query({
-  args: { id: v.id("products") },
+  args: { id: v.id("products"), ...adminSecretArgs },
   returns: v.union(productAdminValidator, v.null()),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     return await ctx.db.get("products", args.id);
   },
 });
 
 export const listServicesAdmin = query({
-  args: {},
+  args: { ...adminSecretArgs },
   returns: v.array(serviceAdminValidator),
-  handler: async (ctx) => {
-    await requireAdmin(ctx);
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx, args.adminSecret);
     return await ctx.db
       .query("services")
       .withIndex("by_sortOrder")
@@ -347,10 +388,10 @@ export const listServicesAdmin = query({
 });
 
 export const getServiceAdmin = query({
-  args: { id: v.id("services") },
+  args: { id: v.id("services"), ...adminSecretArgs },
   returns: v.union(serviceAdminValidator, v.null()),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     return await ctx.db.get("services", args.id);
   },
 });
@@ -358,10 +399,10 @@ export const getServiceAdmin = query({
 // --- admin mutations ----------------------------------------------------------
 
 export const updateSiteSettings = mutation({
-  args: { patch: siteSettingsValidator.partial() },
+  args: { patch: siteSettingsValidator.partial(), ...adminSecretArgs },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     if (Object.keys(args.patch).length === 0) fail("Nothing to update.");
     const patch: { [K in keyof SiteSettings]?: SiteSettings[K] } = {};
     const p = args.patch;
@@ -390,6 +431,10 @@ export const updateSiteSettings = mutation({
       patch.heroImageStorageId = p.heroImageStorageId;
     if (p.aboutImageStorageId !== undefined)
       patch.aboutImageStorageId = p.aboutImageStorageId;
+    if (p.heroImageUrl !== undefined)
+      patch.heroImageUrl = cleanImageUrl(p.heroImageUrl, "Hero image URL");
+    if (p.aboutImageUrl !== undefined)
+      patch.aboutImageUrl = cleanImageUrl(p.aboutImageUrl, "About image URL");
 
     const existing = await ctx.db.query("siteSettings").first();
     if (!existing) {
@@ -426,10 +471,12 @@ export const upsertSection = mutation({
       ),
     ),
     imageStorageId: v.optional(v.id("_storage")),
+    imageUrl: v.optional(v.string()),
+    ...adminSecretArgs,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     if (!(SECTION_KEYS as readonly string[]).includes(args.key)) {
       fail(`Unknown section key "${args.key}".`);
     }
@@ -454,6 +501,9 @@ export const upsertSection = mutation({
         : {}),
       ...(args.imageStorageId !== undefined
         ? { imageStorageId: args.imageStorageId }
+        : {}),
+      ...(args.imageUrl !== undefined
+        ? { imageUrl: cleanImageUrl(args.imageUrl, "Section image URL") }
         : {}),
       updatedAt: Date.now(),
     };
@@ -488,8 +538,8 @@ function cleanProductFields(raw: {
     title: reqLine(raw.title, 120, "Title"),
     description: reqBody(raw.description, 2000, "Description"),
     items: raw.items.map((item) => reqLine(item, 120, "Item")),
-    ...(optLine(raw.imageUrlFallback, 2000, "Image fallback URL")
-      ? { imageUrlFallback: optLine(raw.imageUrlFallback, 2000, "Image fallback URL")! }
+    ...(raw.imageUrlFallback !== undefined
+      ? { imageUrlFallback: cleanImageUrl(raw.imageUrlFallback, "Image URL") }
       : {}),
     alt: reqLine(raw.alt, 200, "Image alt text"),
     sortOrder: raw.sortOrder,
@@ -508,10 +558,11 @@ export const createProduct = mutation({
     alt: v.string(),
     sortOrder: v.number(),
     isPublished: v.boolean(),
+    ...adminSecretArgs,
   },
   returns: v.object({ id: v.id("products") }),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     const fields = cleanProductFields(args);
     const base = args.slug ? reqLine(args.slug, 120, "Slug").toLowerCase() : fields.title;
     const slug = await uniqueProductSlug(ctx, slugify(base));
@@ -531,10 +582,11 @@ export const updateProduct = mutation({
   args: {
     id: v.id("products"),
     patch: productValidator.omit("slug").partial().extend({ slug: v.optional(v.string()) }),
+    ...adminSecretArgs,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     const existing = await ctx.db.get("products", args.id);
     if (!existing) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Product not found." });
@@ -559,8 +611,7 @@ export const updateProduct = mutation({
     }
     if (p.imageStorageId !== undefined) patch.imageStorageId = p.imageStorageId;
     if (p.imageUrlFallback !== undefined) {
-      const cleaned = optLine(p.imageUrlFallback, 2000, "Image fallback URL");
-      patch.imageUrlFallback = cleaned;
+      patch.imageUrlFallback = cleanImageUrl(p.imageUrlFallback, "Image URL");
     }
     if (p.alt !== undefined) patch.alt = reqLine(p.alt, 200, "Image alt text");
     if (p.sortOrder !== undefined) {
@@ -577,10 +628,10 @@ export const updateProduct = mutation({
 });
 
 export const removeProduct = mutation({
-  args: { id: v.id("products") },
+  args: { id: v.id("products"), ...adminSecretArgs },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     const existing = await ctx.db.get("products", args.id);
     if (!existing) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Product not found." });
@@ -621,10 +672,11 @@ export const createService = mutation({
     meta: v.optional(v.string()),
     sortOrder: v.number(),
     isPublished: v.boolean(),
+    ...adminSecretArgs,
   },
   returns: v.object({ id: v.id("services") }),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     const id = await ctx.db.insert("services", {
       ...cleanServiceFields(args),
       updatedAt: Date.now(),
@@ -637,10 +689,11 @@ export const updateService = mutation({
   args: {
     id: v.id("services"),
     patch: serviceValidator.partial(),
+    ...adminSecretArgs,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     const existing = await ctx.db.get("services", args.id);
     if (!existing) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Service not found." });
@@ -667,10 +720,10 @@ export const updateService = mutation({
 });
 
 export const removeService = mutation({
-  args: { id: v.id("services") },
+  args: { id: v.id("services"), ...adminSecretArgs },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.adminSecret);
     const existing = await ctx.db.get("services", args.id);
     if (!existing) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Service not found." });

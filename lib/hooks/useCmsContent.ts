@@ -5,10 +5,13 @@ import { api } from "@/convex/_generated/api";
 import { isConvexConfigured } from "@/app/providers/convex-provider";
 import type {
   CmsContact,
+  CmsHero,
+  CmsNavItem,
   CmsProduct,
   CmsSection,
   CmsSectionItem,
   CmsService,
+  CmsSiteDoc,
 } from "@/lib/types/cms";
 
 /**
@@ -170,6 +173,36 @@ export const FALLBACK_TRUST_ASSURANCES: string[] = [
 ];
 
 export const FALLBACK_SECTIONS: Record<string, CmsSection> = {
+  hero: {
+    key: "hero",
+    eyebrow: "UAE-based import & export",
+    headline: "Global Trade. Seamless Supply. Trusted from the UAE.",
+    body: "Your UAE-based partner connecting international suppliers and buyers through sourcing, commodity trading, and cross-border logistics — consolidated at Jebel Ali, delivered across the region.",
+  },
+  about: {
+    key: "about",
+    eyebrow: "Who we are",
+    headline: "Your Strategic Trade Partner in the UAE",
+    body: "We are a Dubai-based general trading team helping retailers, wholesalers, and project buyers source quality goods, consolidate shipments at Jebel Ali, and clear customs without delays.",
+    items: [
+      {
+        title: "Gateway location",
+        text: "Dubai sits between Asian supply and Middle East, Africa, and European demand — fewer legs, faster turns.",
+      },
+      {
+        title: "Jebel Ali consolidation",
+        text: "Combine mixed categories into full containers at one of the region's most connected ports.",
+      },
+      {
+        title: "Clearance without delays",
+        text: "Invoices, packing lists, certificates of origin, and municipality requirements handled for you.",
+      },
+      {
+        title: "Re-export ready",
+        text: "One partner for sourcing, QC, freight, and GCC-wide distribution — DDP/DAP where it helps.",
+      },
+    ],
+  },
   network: {
     key: "network",
     eyebrow: "Global network",
@@ -196,6 +229,53 @@ export const FALLBACK_SECTIONS: Record<string, CmsSection> = {
     headline: "What We Trade",
     body: "Six core verticals with vetted suppliers, consolidated shipping, and quality inspection — so you can order mixed containers with confidence.",
   },
+  footer: {
+    key: "footer",
+    eyebrow: "",
+    headline: "UAE Trade",
+    body: "Dubai-based general trading — sourcing, QC, freight, and customs for importers across the GCC and beyond.",
+  },
+};
+
+export const FALLBACK_NAV: CmsNavItem[] = [
+  { href: "#about", label: "About" },
+  { href: "#categories", label: "Categories" },
+  { href: "#network", label: "Network" },
+  { href: "#trust", label: "Trust" },
+  { href: "#contact", label: "Contact" },
+];
+
+export const FALLBACK_HERO: CmsHero = {
+  badge: "UAE-based import & export",
+  headline: "Global Trade. Seamless Supply. Trusted from the UAE.",
+  sub: "Your UAE-based partner connecting international suppliers and buyers through sourcing, commodity trading, and cross-border logistics — consolidated at Jebel Ali, delivered across the region.",
+  assurances: [
+    { title: "Jebel Ali consolidation", text: "Mixed containers, one shipment" },
+    { title: "Customs cleared", text: "Documents handled end to end" },
+    { title: "One partner", text: "Sourcing to last-mile delivery" },
+  ],
+  ctaPrimaryLabel: "Request a Quote",
+  ctaPrimaryHref: "#contact",
+  ctaSecondaryLabel: "Explore Trading Categories",
+  ctaSecondaryHref: "#categories",
+};
+
+export const FALLBACK_SITE_DOC: CmsSiteDoc = {
+  siteName: "UAE Trade Gateway",
+  tagline: "Import · Export · Dubai",
+  description:
+    "UAE-based import & export partner for sourcing, commodity trading, and cross-border logistics — consolidated at Jebel Ali, delivered across the GCC and beyond.",
+  primaryCta: "Request a Quote",
+  hero: FALLBACK_HERO,
+  footer: {
+    about:
+      "Dubai-based general trading — sourcing, QC, freight, and customs for importers across the GCC and beyond.",
+    bottomBar: "Jebel Ali · Dubai · United Arab Emirates",
+  },
+  contact: FALLBACK_CONTACT,
+  nav: FALLBACK_NAV,
+  heroImageUrl: null,
+  aboutImageUrl: null,
 };
 
 // --- live hooks --------------------------------------------------------------
@@ -218,14 +298,34 @@ export function useCmsSiteMeta(): {
   primaryCta: string;
   isLive: boolean;
 } {
-  const data = useLiveQuery<{ siteName: string; primaryCta: string } | null>(
-    api.cms.getSiteSettings,
-    {},
-  );
-  if (!data) {
-    return { siteName: "UAE Trade Gateway", primaryCta: "Request a Quote", isLive: false };
-  }
-  return { siteName: data.siteName, primaryCta: data.primaryCta, isLive: true };
+  const { site: doc, isLive } = useCmsSite();
+  return { siteName: doc.siteName, primaryCta: doc.primaryCta, isLive };
+}
+
+/**
+ * Live full site-settings doc (nav, hero, footer, contact, images).
+ * Single source for Navbar / Hero / About / Footer chrome — live data OR
+ * the verbatim fallback doc, never undefined UI.
+ */
+export function useCmsSite(): { site: CmsSiteDoc; isLive: boolean } {
+  const data = useLiveQuery<CmsSiteDoc>(api.cms.getSiteSettings, {});
+  if (!data) return { site: FALLBACK_SITE_DOC, isLive: false };
+  return {
+    site: {
+      ...FALLBACK_SITE_DOC,
+      ...data,
+      hero: data.hero ?? FALLBACK_HERO,
+      nav:
+        Array.isArray(data.nav) && data.nav.length > 0 ? data.nav : FALLBACK_NAV,
+    },
+    isLive: true,
+  };
+}
+
+/** Live nav links with fallback (single nav source — P2-3). */
+export function useCmsNav(): { nav: CmsNavItem[]; isLive: boolean } {
+  const { site, isLive } = useCmsSite();
+  return { nav: site.nav, isLive };
 }
 
 /**

@@ -37,6 +37,32 @@ export type CmsService = {
   isPublished: boolean;
 };
 
+export type CmsNavItem = {
+  href: string;
+  label: string;
+};
+
+export type CmsHeroAssurance = {
+  title: string;
+  text: string;
+};
+
+export type CmsHero = {
+  badge: string;
+  headline: string;
+  sub: string;
+  assurances: CmsHeroAssurance[];
+  ctaPrimaryLabel?: string;
+  ctaPrimaryHref?: string;
+  ctaSecondaryLabel?: string;
+  ctaSecondaryHref?: string;
+};
+
+export type CmsFooter = {
+  about: string;
+  bottomBar: string;
+};
+
 export type CmsSectionItem = {
   title: string;
   text: string;
@@ -49,6 +75,22 @@ export type CmsSection = {
   headline: string;
   body: string;
   items?: CmsSectionItem[];
+  /** Resolved public image URL (UploadThing, legacy storage, or null). */
+  imageUrl?: string | null;
+};
+
+/** Full `cms.getSiteSettings` doc shape (single source for chrome). */
+export type CmsSiteDoc = {
+  siteName: string;
+  tagline: string;
+  description: string;
+  primaryCta: string;
+  hero: CmsHero;
+  footer: CmsFooter;
+  contact: CmsContact;
+  nav: CmsNavItem[];
+  heroImageUrl: string | null;
+  aboutImageUrl: string | null;
 };
 
 export type CmsSiteSettings = {

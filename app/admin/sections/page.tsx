@@ -5,8 +5,10 @@ import type { FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { isConvexConfigured } from "@/app/providers/convex-provider";
+import { adminAuthArgs } from "@/lib/admin-token";
 import { SECTION_KEYS } from "@/lib/types/cms";
 import { Field, FormError, FormOk, PrimaryButton, fieldInput } from "@/app/components/admin/fields";
+import ImageUploader from "@/app/components/admin/ImageUploader";
 
 type ItemDraft = { title: string; text: string; meta: string };
 
@@ -20,6 +22,7 @@ export default function AdminSectionsPage() {
   const [headline, setHeadline] = useState("");
   const [body, setBody] = useState("");
   const [items, setItems] = useState<ItemDraft[]>([]);
+  const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -35,11 +38,13 @@ export default function AdminSectionsPage() {
       setHeadline(found.headline);
       setBody(found.body);
       setItems((found.items ?? []).map((i) => ({ title: i.title, text: i.text, meta: i.meta ?? "" })));
+      setImageUrl(found.imageUrl ?? "");
     } else {
       setEyebrow("");
       setHeadline("");
       setBody("");
       setItems([]);
+      setImageUrl("");
     }
     setError(null);
     setOk(null);
@@ -52,10 +57,12 @@ export default function AdminSectionsPage() {
     setBusy(true);
     try {
       await upsert({
+        ...adminAuthArgs(),
         key,
         eyebrow,
         headline,
         body,
+        imageUrl: imageUrl.trim(),
         ...(items.length > 0
           ? {
               items: items.map((i) => ({
@@ -169,6 +176,17 @@ export default function AdminSectionsPage() {
 
         <FormError message={error} />
         <FormOk message={ok} />
+        <div>
+          <p className="mb-2 text-sm font-semibold text-navy-950">
+            Section image (optional — UploadThing)
+          </p>
+          <ImageUploader
+            usedBy={`sections/${key}`}
+            currentUrl={imageUrl || null}
+            onUploaded={({ url }) => setImageUrl(url)}
+            onRemove={() => setImageUrl("")}
+          />
+        </div>
         <PrimaryButton disabled={busy}>{busy ? "Saving…" : `Save “${key}”`}</PrimaryButton>
       </form>
     </div>

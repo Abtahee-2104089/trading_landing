@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import AdminErrorBoundary from "@/app/components/admin/AdminErrorBoundary";
+import SignOutButton from "@/app/components/admin/SignOutButton";
 
 const links = [
   { href: "/admin", label: "Dashboard" },
@@ -10,12 +11,14 @@ const links = [
   { href: "/admin/services", label: "Services" },
   { href: "/admin/media", label: "Media" },
   { href: "/admin/inquiries", label: "Inquiries" },
+  { href: "/admin/account", label: "Account" },
 ];
 
 /**
- * CMS admin shell (Pal). Every briefing item is editable from here —
- * no code, no Convex dashboard. Auth gate lands with Kabir's login;
- * until then admin queries render "Sign in required".
+ * CMS admin shell (Pal + Kabir). Every briefing item is editable from here —
+ * no code, no Convex dashboard. Gated by `middleware.ts` (`admin_token`
+ * cookie → `/admin/login`); Convex admin calls additionally thread
+ * `adminSecret` (see `convex/adminAuth.ts`).
  */
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
@@ -40,6 +43,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               ))}
             </ul>
           </nav>
+          <span className="ml-auto">
+            <SignOutButton />
+          </span>
         </div>
       </header>
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">

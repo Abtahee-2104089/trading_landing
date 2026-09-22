@@ -159,10 +159,14 @@ describe("admin gate is fail-closed", () => {
     ).rejects.toThrow("Sign in required.");
   });
 
-  test("anonymous media upload URL is rejected", async () => {
+  test("anonymous media save is rejected", async () => {
     const t = makeTest();
-    await expect(t.mutation(api.media.generateUploadUrl, {})).rejects.toThrow(
-      "Sign in required.",
-    );
+    await expect(
+      t.mutation(api.media.save, {
+        url: "https://example.ufs.sh/f/abc",
+        alt: "x",
+        usedBy: "test",
+      }),
+    ).rejects.toThrow("Sign in required.");
   });
 });

@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { isConvexConfigured } from "@/app/providers/convex-provider";
+import { adminAuthArgs } from "@/lib/admin-token";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Field, FormError, FormOk, PrimaryButton, fieldInput } from "@/app/components/admin/fields";
 
@@ -21,7 +22,7 @@ const emptyDraft: Draft = { title: "", description: "", meta: "", sortOrder: "0"
 /** `/admin/services` — same pattern as products, smaller form. */
 export default function AdminServicesPage() {
   const configured = isConvexConfigured();
-  const services = useQuery(api.cms.listServicesAdmin, configured ? {} : "skip");
+  const services = useQuery(api.cms.listServicesAdmin, configured ? adminAuthArgs() : "skip");
   const createService = useMutation(api.cms.createService);
   const updateService = useMutation(api.cms.updateService);
   const removeService = useMutation(api.cms.removeService);
@@ -75,10 +76,10 @@ export default function AdminServicesPage() {
     setBusy(true);
     try {
       if (editing === "new") {
-        await createService(payload);
+        await createService({ ...adminAuthArgs(), ...payload });
         setOk("Service created.");
       } else if (editing) {
-        await updateService({ id: editing, patch: payload });
+        await updateService({ ...adminAuthArgs(), id: editing, patch: payload });
         setOk("Service updated.");
       }
       setEditing(null);
@@ -133,7 +134,7 @@ export default function AdminServicesPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => void updateService({ id: s._id, patch: { isPublished: !s.isPublished } }).catch(() => setError("Publish toggle failed."))}
+                      onClick={() => void updateService({ ...adminAuthArgs(), id: s._id, patch: { isPublished: !s.isPublished } }).catch(() => setError("Publish toggle failed."))}
                       className="text-xs font-semibold text-navy-900 underline-offset-4 hover:underline"
                     >
                       {s.isPublished ? "Unpublish" : "Publish"}
@@ -142,7 +143,7 @@ export default function AdminServicesPage() {
                       type="button"
                       onClick={() => {
                         if (window.confirm(`Delete “${s.title}”? Prefer Unpublish.`)) {
-                          void removeService({ id: s._id }).catch(() => setError("Delete failed."));
+                          void removeService({ ...adminAuthArgs(), id: s._id }).catch(() => setError("Delete failed."));
                         }
                       }}
                       className="text-xs font-semibold text-red-700 underline-offset-4 hover:underline"

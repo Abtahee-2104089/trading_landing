@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { isConvexConfigured } from "@/app/providers/convex-provider";
+import { adminAuthArgs } from "@/lib/admin-token";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Field, FormError, FormOk, PrimaryButton, fieldInput } from "@/app/components/admin/fields";
 import ImageUploader from "@/app/components/admin/ImageUploader";
@@ -16,6 +17,7 @@ type Draft = {
   alt: string;
   sortOrder: string;
   isPublished: boolean;
+  imageUrl: string;
   imageStorageId?: Id<"_storage">;
 };
 
@@ -26,6 +28,7 @@ const emptyDraft: Draft = {
   alt: "",
   sortOrder: "0",
   isPublished: true,
+  imageUrl: "",
 };
 
 /**
@@ -34,7 +37,7 @@ const emptyDraft: Draft = {
  */
 export default function AdminProductsPage() {
   const configured = isConvexConfigured();
-  const products = useQuery(api.cms.listProductsAdmin, configured ? {} : "skip");
+  const products = useQuery(api.cms.listProductsAdmin, configured ? adminAuthArgs() : "skip");
   const createProduct = useMutation(api.cms.createProduct);
   const updateProduct = useMutation(api.cms.updateProduct);
   const removeProduct = useMutation(api.cms.removeProduct);
@@ -64,6 +67,7 @@ export default function AdminProductsPage() {
       alt: p.alt,
       sortOrder: String(p.sortOrder),
       isPublished: p.isPublished,
+      imageUrl: p.imageUrlFallback ?? "",
       ...(p.imageStorageId ? { imageStorageId: p.imageStorageId } : {}),
     });
     setEditing(id);
@@ -89,17 +93,20 @@ export default function AdminProductsPage() {
     try {
       if (editing === "new") {
         await createProduct({
+          ...adminAuthArgs(),
           title: draft.title,
           description: draft.description,
           items,
           alt: draft.alt,
           sortOrder,
           isPublished: draft.isPublished,
+          imageUrlFallback: draft.imageUrl.trim(),
           ...(draft.imageStorageId ? { imageStorageId: draft.imageStorageId } : {}),
         });
         setOk("Product created — it is live on the homepage.");
       } else if (editing) {
         await updateProduct({
+          ...adminAuthArgs(),
           id: editing,
           patch: {
             title: draft.title,
@@ -108,6 +115,7 @@ export default function AdminProductsPage() {
             alt: draft.alt,
             sortOrder,
             isPublished: draft.isPublished,
+            imageUrlFallback: draft.imageUrl.trim(),
             ...(draft.imageStorageId ? { imageStorageId: draft.imageStorageId } : {}),
           },
         });
@@ -124,7 +132,7 @@ export default function AdminProductsPage() {
   async function onTogglePublish(id: Id<"products">, current: boolean) {
     setError(null);
     try {
-      await updateProduct({ id, patch: { isPublished: !current } });
+      await updateProduct({ ...adminAuthArgs(), id, patch: { isPublished: !current } });
     } catch {
       setError("Publish toggle failed.");
     }
@@ -215,9 +223,13 @@ export default function AdminProductsPage() {
           </label>
           <ImageUploader
             usedBy={editing === "new" ? "products/new" : `products/${editing}`}
-            onUploaded={({ storageId }) => setDraft((d) => ({ ...d, imageStorageId: storageId }))}
+            currentUrl={draft.imageUrl || null}
+            onUploaded={({ url }) =>
+              setDraft((d) => ({ ...d, imageUrl: url }))
+            }
+            onRemove={() => setDraft((d) => ({ ...d, imageUrl: "" }))}
           />
-          {draft.imageStorageId ? (
+          {draft.imageUrl ? (
             <p className="text-xs text-teal-700">Image attached — saving links it to this product.</p>
           ) : null}
           <div className="flex gap-3">
@@ -243,7 +255,7 @@ function DeleteProductButton({
 }: {
   id: Id<"products">;
   onDone: () => void;
-  remove: (args: { id: Id<"products"> }) => Promise<unknown>;
+  remove: (args: { id: Id<"products">; adminSecret?: string }) => Promise<unknown>;
 }) {
   const [confirming, setConfirming] = useState(false);
   return (
@@ -257,7 +269,7 @@ function DeleteProductButton({
           Really delete?{" "}
           <button
             type="button"
-            onClick={() => void remove({ id }).then(onDone)}
+            onClick={() => void remove({ ...adminAuthArgs(), id }).then(onDone)}
             className="font-semibold text-red-700 underline-offset-4 hover:underline"
           >
             Yes, delete
