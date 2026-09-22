@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { MouseEvent } from "react";
 import { useCmsProducts, useCmsSection } from "@/lib/hooks/useCmsContent";
 
 /**
@@ -11,11 +12,40 @@ import { useCmsProducts, useCmsSection } from "@/lib/hooks/useCmsContent";
  * live backend shows "No categories published yet." (no crash).
  *
  * P1-2: every Enquire link preselects the category in #contact via
- * `#contact?category=<slug>` (Contact reads hash + search param).
+ * `#contact?category=<slug>` (Contact reads hash + search param) AND smooth-
+ * scrolls to #contact. Native anchor scrolling cannot handle the
+ * `#contact?category=` hash (no element has that id), so the click handler
+ * below sets the hash (to drive Contact's preselect) and then manually
+ * scrolls to #contact.
  */
 export default function TradingCategories() {
   const { products, isLive } = useCmsProducts();
   const { section } = useCmsSection("categories");
+
+  function handleEnquireClick(
+    event: MouseEvent<HTMLAnchorElement>,
+    slug: string,
+  ) {
+    event.preventDefault();
+    if (typeof window === "undefined") return;
+    const encoded = encodeURIComponent(slug);
+    const nextHash = `contact?category=${encoded}`;
+    // Update the hash so Contact's hashchange listener preselects the
+    // category. If the hash is unchanged (same category clicked twice),
+    // hashchange won't fire — dispatch a custom event so Contact still
+    // applies the selection.
+    if (window.location.hash !== `#${nextHash}`) {
+      // eslint-disable-next-line react-hooks/immutability -- intentional hash navigation, not React state
+      window.location.hash = nextHash;
+    } else {
+      window.dispatchEvent(
+        new CustomEvent<string>("contact:select-category", { detail: slug }),
+      );
+    }
+    document
+      .getElementById("contact")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <section
@@ -80,6 +110,7 @@ export default function TradingCategories() {
                     </ul>
                     <a
                       href={`#contact?category=${encodeURIComponent(category.slug)}`}
+                      onClick={(event) => handleEnquireClick(event, category.slug)}
                       className="mt-5 inline-flex w-fit items-center gap-1 rounded-sm text-sm font-semibold text-teal-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
                       Enquire about this category
