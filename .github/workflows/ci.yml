@@ -15,4 +15,4 @@ jobs:
       - run: bun run build
         env:
           NEXT_PUBLIC_SITE_URL: https://trading-landing-beta.vercel.app
-      - run: bun run test --if-present
+      - run: bun run test
