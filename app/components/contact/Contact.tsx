@@ -18,9 +18,14 @@ const inputClasses =
 /** Read `#contact?category=<slug>` (or `?category=`) from the URL. */
 function categoryFromUrl(): InquiryCategory | null {
   if (typeof window === "undefined") return null;
-  const hashCategory = window.location.hash.includes("category=")
-    ? window.location.hash.split("category=")[1]?.split("&")[0]
-    : null;
+  // Hash form is `#contact?category=<slug>` — parse the query part after `?`
+  // so extra params (e.g. `#contact?category=x&foo=1`) don't leak into the slug.
+  const hash = window.location.hash;
+  const qIndex = hash.indexOf("?");
+  const hashCategory =
+    qIndex >= 0
+      ? new URLSearchParams(hash.slice(qIndex + 1)).get("category")
+      : null;
   const searchCategory = new URLSearchParams(window.location.search).get("category");
   const raw = hashCategory ?? searchCategory;
   if (!raw) return null;
@@ -38,17 +43,57 @@ export default function Contact() {
   const { section } = useCmsSection("contact");
   const { primaryCta } = useCmsSiteMeta();
   const [category, setCategory] = useState<InquiryCategory>(INQUIRY_CATEGORIES[0]);
+  const [preselected, setPreselected] = useState(false);
   const successRef = useRef<HTMLHeadingElement>(null);
 
   // P1-2: category preselect from card links + live hash changes.
+  // Handles: initial load with `#contact?category=` (which never natively
+  // scrolls — no element has that id — so we scroll manually), subsequent
+  // hash changes, and re-clicks on the same category (custom event, since
+  // setting an identical hash fires no hashchange).
   useEffect(() => {
-    const apply = () => {
+    const applyFromUrl = () => {
       const match = categoryFromUrl();
-      if (match) setCategory(match);
+      if (match) {
+        setCategory(match);
+        setPreselected(true);
+      }
     };
-    apply();
-    window.addEventListener("hashchange", apply);
-    return () => window.removeEventListener("hashchange", apply);
+    const applyFromEvent = (event: Event) => {
+      const slug = (event as CustomEvent<string>).detail;
+      if (typeof slug !== "string" || !slug) return;
+      try {
+        const match = matchCategorySlug(decodeURIComponent(slug));
+        if (match) {
+          setCategory(match);
+          setPreselected(true);
+        }
+      } catch {
+        // Invalid slug — leave the current selection untouched.
+      }
+    };
+    applyFromUrl();
+    if (
+      typeof window !== "undefined" &&
+      (window.location.hash.includes("category=") ||
+        new URLSearchParams(window.location.search).has("category"))
+    ) {
+      document
+        .getElementById("contact")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    window.addEventListener("hashchange", applyFromUrl);
+    window.addEventListener(
+      "contact:select-category",
+      applyFromEvent as EventListener,
+    );
+    return () => {
+      window.removeEventListener("hashchange", applyFromUrl);
+      window.removeEventListener(
+        "contact:select-category",
+        applyFromEvent as EventListener,
+      );
+    };
   }, []);
 
   // P1-5: move keyboard/screen-reader focus to the success heading.
@@ -283,8 +328,11 @@ export default function Contact() {
                   name="category"
                   disabled={isSubmitting}
                   value={category}
-                  onChange={(event) => setCategory(event.target.value as InquiryCategory)}
-                  className={inputClasses}
+                  onChange={(event) => {
+                    setCategory(event.target.value as InquiryCategory);
+                    setPreselected(false);
+                  }}
+                  className={`${inputClasses}${preselected ? " ring-2 ring-teal-700 ring-offset-2" : ""}`}
                 >
                   {INQUIRY_CATEGORIES.map((option) => (
                     <option key={option} value={option}>
@@ -292,6 +340,11 @@ export default function Contact() {
                     </option>
                   ))}
                 </select>
+                {preselected ? (
+                  <p aria-live="polite" className="mt-1.5 text-xs font-medium text-teal-700">
+                    Preselected from the category you chose — change it if needed.
+                  </p>
+                ) : null}
               </div>
 
               <div className="mt-4">
