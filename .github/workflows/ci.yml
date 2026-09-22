@@ -9,5 +9,10 @@ jobs:
       - run: bun install
       - run: bun run lint
       - run: bun run typecheck
+      # The P0-3 build guard requires NEXT_PUBLIC_SITE_URL in production
+      # builds. CI is neither Vercel nor local dev, so provide the public
+      # beta URL explicitly (it is public by design — Config, not Secret).
       - run: bun run build
-      - run: bun run test --if-present
+        env:
+          NEXT_PUBLIC_SITE_URL: https://trading-landing-beta.vercel.app
+      - run: bun run test
