@@ -39,10 +39,17 @@ export async function requireAdmin(
   }
   const secret = (adminSecret ?? "").trim();
   if (secret) {
-    const session = verifySession(
-      secret,
-      resolveSessionSecret(process.env.ADMIN_SESSION_SECRET),
-    );
+    // Fail-closed: any exception in session verification denies access
+    // (a crypto failure must never become a 500 that masks the real cause).
+    let session: { email: string; expiresAtMs: number } | null = null;
+    try {
+      session = verifySession(
+        secret,
+        resolveSessionSecret(process.env.ADMIN_SESSION_SECRET),
+      );
+    } catch {
+      session = null;
+    }
     if (session) return session.email;
     const expected = (process.env.ADMIN_TOKEN ?? "").trim();
     if (expected && secret === expected) return null;
